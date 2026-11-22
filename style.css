@@ -20,7 +20,7 @@ a{color:inherit;text-decoration:none}
 /* ---------- sidebar ---------- */
 .sidebar{background:linear-gradient(180deg,#14582f 0%,#0f4a2c 100%);color:#fff;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 .brand{display:flex;flex-direction:column;align-items:center;gap:4px;padding:34px 16px 26px}
-.brand-ic{width:40px;height:40px;stroke-width:2.4}
+.brand-logo{width:84px;height:84px;border-radius:20px;display:block;box-shadow:0 4px 14px rgba(0,0,0,.28)}
 .brand-name{font-size:25px;font-weight:700;letter-spacing:.2px}
 .nav{display:flex;flex-direction:column;gap:6px;padding:0 17px}
 .nav-item{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;color:#e6f3ea;font-size:16px;transition:background .15s}
@@ -253,7 +253,7 @@ textarea{font-family:Consolas,monospace;font-size:13px;resize:vertical}
   .app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;align-items:center;gap:8px;padding:10px 14px;overflow-x:auto}
   .brand{flex-direction:row;padding:0 10px 0 0;gap:8px}
-  .brand-ic{width:26px;height:26px}.brand-name{font-size:18px;white-space:nowrap}
+  .brand-logo{width:38px;height:38px;border-radius:10px;box-shadow:none}.brand-name{font-size:18px;white-space:nowrap}
   .nav{flex-direction:row;padding:0}
   .nav-item{padding:9px 12px;font-size:14px;white-space:nowrap;gap:8px}
   .nav-item .ic{width:18px;height:18px}
@@ -266,6 +266,9 @@ textarea{font-family:Consolas,monospace;font-size:13px;resize:vertical}
   .title h1{font-size:30px}.title p{font-size:16px}
   .form-grid{grid-template-columns:1fr}
   .bottom-row{grid-template-columns:1fr}
-  .top-cards{width:100%}.pill-card{flex:1;min-width:0}
+  .top-cards{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .pill-card,.batch-card{min-width:0}
+  .batch-card,.date-card{grid-column:1/-1}
+  .batch-ic{flex:none}
   .sval{font-size:36px}
 }
