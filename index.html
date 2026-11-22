@@ -35,6 +35,7 @@
     <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
     <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
     <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></symbol>
@@ -55,6 +56,7 @@
       <a href="#riwayat" data-page="riwayat" class="nav-item"><svg class="ic"><use href="#i-bars"/></svg><span>Riwayat Data</span></a>
       <a href="#pengaturan" data-page="pengaturan" class="nav-item"><svg class="ic"><use href="#i-gear"/></svg><span>Pengaturan</span></a>
       <a href="#notifikasi" data-page="notifikasi" class="nav-item"><svg class="ic"><use href="#i-bell"/></svg><span>Notifikasi</span><em class="badge" id="navBadge" hidden>0</em></a>
+      <a href="#model3d" data-page="model3d" class="nav-item"><svg class="ic"><use href="#i-cube"/></svg><span>Model 3D</span></a>
       <a href="#bantuan" data-page="bantuan" class="nav-item"><svg class="ic"><use href="#i-help"/></svg><span>Bantuan</span></a>
     </nav>
 
@@ -300,6 +302,18 @@
         </div>
       </div>
       <section class="card"><div class="notif-list big" id="notifFull"></div></section>
+    </section>
+
+    <!-- ============ MODEL 3D ============ -->
+    <section class="page" id="page-model3d">
+      <div class="page-head">
+        <h2>Model 3D Node Sensor</h2>
+        <div class="btn-row"><a class="btn" href="model-3d-iot.html" target="_blank" rel="noopener">Buka layar penuh</a></div>
+      </div>
+      <section class="card model-card">
+        <p class="muted">Model kasar casing node sensor IoT (ESP32 + DHT22) dengan logo di penutup atas. Seret model untuk memutar; panel di sebelahnya mengatur sudut pandang, mode kerangka, bongkar casing, zoom, dan warna.</p>
+        <iframe id="modelFrame" title="Model 3D node sensor IoT" src="model-3d-iot.html" loading="lazy"></iframe>
+      </section>
     </section>
 
     <!-- ============ BANTUAN ============ -->

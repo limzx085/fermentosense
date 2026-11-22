@@ -27,6 +27,7 @@ Batas dapat diubah di menu Pengaturan.
 ISI FOLDER
 - index.html, style.css, app.js     : website dashboard
 - logo.png, favicon.png, apple-touch-icon.png : logo FermentoSense (sidebar & ikon tab browser)
+- model-3d-iot.html                 : model 3D node sensor IoT (menu "Model 3D"; juga bisa dibuka sendiri)
 - arduino/fermentosense_tinkercad   : sketch Arduino Uno untuk Tinkercad
 - arduino/fermentosense_esp32_wokwi : sketch ESP32 (pengembangan dari proyek Wokwi tim)
 Halaman "Bantuan" di dalam dashboard berisi tabel komponen, kode, dan format data.

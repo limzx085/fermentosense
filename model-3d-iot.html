@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Model 3D Node Sensor IoT</title>
+<style>
+  :root{
+    --green:#164A2B; --cream:#F4ECD9; --amber:#E39A2D;
+    --bg:#FAF5E8; --ink:#1B2A21; --muted:#475A4D; --line:#E0D6BC;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  button{font-family:inherit}
+  button:focus-visible,input:focus-visible{outline:3px solid #B45309;outline-offset:2px}
+  .app{display:flex;flex-wrap:wrap;gap:24px;padding:24px;max-width:1500px;margin:0 auto}
+  .stage{flex:999 1 560px;min-width:0;height:min(820px,calc(100vh - 48px));min-height:480px;position:relative;overflow:hidden;
+    border-radius:16px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 40%,#FFFDF7 0%,#EFE6CF 100%);
+    perspective:1800px;cursor:grab;touch-action:none;user-select:none}
+  .stage:active{cursor:grabbing}
+  #scene{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+  .hud{position:absolute;pointer-events:none;color:var(--muted)}
+  .hud.tl{left:20px;top:18px;font-size:13px;font-weight:500}
+  .hud.bl{left:20px;bottom:16px;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .panel{flex:1 1 320px;min-width:0;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;
+    display:flex;flex-direction:column;gap:22px;align-self:flex-start}
+  .head{display:flex;align-items:center;gap:14px}
+  h1{margin:0;font-size:26px;line-height:1.15}
+  .sub{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--muted)}
+  .lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:block}
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
+  .btn{min-height:44px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink);border:1px solid #CDBF9A}
+  .btn[aria-pressed="true"]{background:var(--green);color:var(--bg);border-color:var(--green)}
+  input[type=range]{width:100%;height:44px;margin:0;accent-color:var(--green)}
+  .colors{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .colors label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+  .colors input[type=color]{width:100%;height:40px;padding:2px;border:1px solid #CDBF9A;border-radius:8px;background:#fff;cursor:pointer}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+  li{display:flex;align-items:center;gap:10px}
+  li i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.2);flex:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage" id="stage" role="img" aria-label="Model 3D kasar node sensor IoT dengan logo di penutup atas. Seret untuk memutar.">
+    <div id="scene">
+      <div id="shadow"></div>
+      <div id="grid"></div>
+      <div id="logo">
+        <svg viewBox="335 145 390 350" width="100%" height="100%" style="display:block" aria-hidden="true">
+          <rect x="335" y="145" width="390" height="350" rx="26" fill="#FAF5E8"/>
+          <rect x="347" y="258" width="268" height="224" rx="62" fill="#164A2B"/>
+          <ellipse cx="431" cy="339" rx="38" ry="28" transform="rotate(-30 431 339)" fill="#F4ECD9"/>
+          <ellipse cx="521" cy="323" rx="38" ry="28" transform="rotate(-25 521 323)" fill="#F4ECD9"/>
+          <ellipse cx="471" cy="413" rx="41" ry="25" transform="rotate(-5 471 413)" fill="#F4ECD9"/>
+          <ellipse cx="558" cy="407" rx="35" ry="26" transform="rotate(35 558 407)" fill="#F4ECD9"/>
+          <path d="M610 168 A90 90 0 0 1 700 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
+          <path d="M610 204 A54 54 0 0 1 664 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
+          <circle cx="614" cy="258" r="14" fill="#E39A2D"/>
+        </svg>
+      </div>
+    </div>
+    <div class="hud tl">Seret untuk memutar</div>
+    <div class="hud bl" id="readout"></div>
+  </div>
+
+  <aside class="panel">
+    <div class="head">
+      <svg viewBox="335 145 390 350" width="56" height="50" style="flex:none" aria-hidden="true">
+        <rect x="335" y="145" width="390" height="350" rx="26" fill="#FAF5E8"/>
+        <rect x="347" y="258" width="268" height="224" rx="62" fill="#164A2B"/>
+        <ellipse cx="431" cy="339" rx="38" ry="28" transform="rotate(-30 431 339)" fill="#F4ECD9"/>
+        <ellipse cx="521" cy="323" rx="38" ry="28" transform="rotate(-25 521 323)" fill="#F4ECD9"/>
+        <ellipse cx="471" cy="413" rx="41" ry="25" transform="rotate(-5 471 413)" fill="#F4ECD9"/>
+        <ellipse cx="558" cy="407" rx="35" ry="26" transform="rotate(35 558 407)" fill="#F4ECD9"/>
+        <path d="M610 168 A90 90 0 0 1 700 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
+        <path d="M610 204 A54 54 0 0 1 664 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
+        <circle cx="614" cy="258" r="14" fill="#E39A2D"/>
+      </svg>
+      <div>
+        <h1>Node Sensor IoT</h1>
+        <p class="sub">Model kasar ESP32 + DHT22. Skala 1 px = 1 mm.</p>
+      </div>
+    </div>
+
+    <div>
+      <span class="lbl">Sudut pandang</span>
+      <div class="grid2" id="views"></div>
+    </div>
+
+    <div>
+      <span class="lbl">Tampilan</span>
+      <div class="grid2" id="modes"></div>
+      <div class="grid2" id="toggles"></div>
+    </div>
+
+    <div>
+      <label class="lbl" for="zoom">Zoom</label>
+      <input id="zoom" type="range" min="0.6" max="1.6" step="0.05" value="1">
+    </div>
+
+    <div>
+      <span class="lbl">Warna</span>
+      <div class="colors">
+        <label>Casing<input type="color" id="cCase" value="#164a2b"></label>
+        <label>Penutup<input type="color" id="cLid" value="#f4ecd9"></label>
+        <label>Sensor<input type="color" id="cSensor" value="#e39a2d"></label>
+      </div>
+    </div>
+
+    <div>
+      <span class="lbl">Komponen</span>
+      <ul>
+        <li><i id="swCase"></i>Casing (alas + dinding)</li>
+        <li><i id="swLid"></i>Penutup atas + logo</li>
+        <li><i style="background:#0B1F14"></i>Layar OLED, antena</li>
+        <li><i style="background:#2F7D4F"></i>PCB, modul ESP32, header</li>
+        <li><i id="swSensor"></i>Sensor DHT22, tombol reset, LED</li>
+        <li><i style="background:#9AA1A9"></i>Port USB-C (depan)</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var state = { rx: -24, ry: -32, zoom: 1, wire: false, explode: false, auto: false, logo: true, dragging: false };
+  var colors = { caseC: '#164a2b', lidC: '#f4ecd9', sensorC: '#e39a2d' };
+  var drag = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function shade(hex, k) {
+    var c = rgb(hex);
+    return 'rgb(' + c.map(function (v) { return Math.max(0, Math.min(255, Math.round(v * k))); }).join(',') + ')';
+  }
+
+  // ---- bentuk: kotak-kotak (g = grup: body | pcb | lid) ----
+  function buildParts() {
+    var P = [];
+    function add(g, x, y, z, w, h, d, c, o) { P.push(Object.assign({ g: g, x: x, y: y, z: z, w: w, h: h, d: d, c: c }, o || {})); }
+    var C = colors;
+    add('body', 0, 37, 0, 240, 6, 150, C.caseC);
+    add('body', 0, 20, 72, 240, 40, 6, C.caseC);
+    add('body', 0, 20, -72, 240, 40, 6, C.caseC);
+    add('body', -117, 20, 0, 6, 40, 138, C.caseC);
+    add('body', 117, 20, 0, 6, 40, 138, C.caseC);
+    [[-85, -45], [85, -45], [-85, 45], [85, 45]].forEach(function (p) { add('body', p[0], 32, p[1], 6, 4, 6, '#C98A25'); });
+    add('pcb', 0, 28, 0, 200, 4, 110, '#2F7D4F');
+    add('pcb', -65, 24, -5, 50, 4, 60, '#A9AFB6', { label: 'ESP32', lc: '#1B2A21', ls: 11 });
+    add('pcb', 35, 24.5, 10, 20, 3, 20, '#14181C');
+    add('pcb', 10, 22, 48, 150, 8, 5, '#15181C');
+    add('pcb', 10, 22, -48, 150, 8, 5, '#15181C');
+    [70, 82, 94].forEach(function (x) { add('pcb', x, 22, -30, 6, 8, 6, '#E39A2D'); });
+    add('lid', 0, -7, 0, 240, 14, 150, C.lidC);
+    add('lid', -50, -15, 10, 90, 2, 54, '#0F2A1A');
+    add('lid', -50, -17, 10, 80, 2, 44, '#0B1F14', { label: '28.4°C', lc: '#F4ECD9', ls: 14 });
+    add('lid', 65, -16, 35, 16, 4, 16, C.sensorC);
+    add('lid', -100, -37, -55, 7, 46, 7, '#0F2A1A');
+    add('body', -70, 20, 76, 22, 9, 2, '#9AA1A9');
+    add('body', -70, 20, 77.2, 16, 4, 0.6, '#14181C');
+    add('body', 30, 20, 76, 6, 6, 2, C.sensorC);
+    add('body', 50, 20, 76, 6, 6, 2, '#F4ECD9');
+    add('body', 132, 18, 0, 24, 34, 36, C.sensorC);
+    [-10, 0, 10].forEach(function (z) { add('body', 144.6, 18, z, 1.2, 22, 4, '#164A2B'); });
+    return P;
+  }
+
+  var scene = $('scene');
+  var faceEls = []; // { el, p, q }
+  var FACES = [
+    ['front', 1], ['back', 0.72], ['right', 0.88], ['left', 0.8], ['top', 1.12], ['bottom', 0.6]
+  ];
+
+  function faceGeom(p, name) {
+    var w = p.w, h = p.h, d = p.d;
+    switch (name) {
+      case 'front': return [w, h, 'translateZ(' + d / 2 + 'px)'];
+      case 'back': return [w, h, 'rotateY(180deg) translateZ(' + d / 2 + 'px)'];
+      case 'right': return [d, h, 'rotateY(90deg) translateZ(' + w / 2 + 'px)'];
+      case 'left': return [d, h, 'rotateY(-90deg) translateZ(' + w / 2 + 'px)'];
+      case 'top': return [w, d, 'rotateX(90deg) translateZ(' + h / 2 + 'px)'];
+      default: return [w, d, 'rotateX(-90deg) translateZ(' + h / 2 + 'px)'];
+    }
+  }
+
+  var parts = buildParts();
+  parts.forEach(function (p) {
+    FACES.forEach(function (q) {
+      var el = document.createElement('div');
+      if (p.label && q[0] === 'top') el.textContent = p.label;
+      scene.insertBefore(el, $('logo'));
+      faceEls.push({ el: el, p: p, q: q });
+    });
+  });
+
+  function offsets() {
+    return { body: 0, pcb: state.explode ? -22 : 0, lid: state.explode ? -95 : 0 };
+  }
+
+  function applyFaces() {
+    var off = offsets();
+    faceEls.forEach(function (f) {
+      var p = f.p, g = faceGeom(p, f.q[0]);
+      var X = p.x - 12, Y = p.y + 10 + off[p.g], Z = p.z;
+      var c = rgb(p.c);
+      var st = 'position:absolute;left:50%;top:50%;box-sizing:border-box;'
+        + 'width:' + g[0] + 'px;height:' + g[1] + 'px;margin-left:' + (-g[0] / 2) + 'px;margin-top:' + (-g[1] / 2) + 'px;'
+        + 'transform:translate3d(' + X + 'px,' + Y + 'px,' + Z + 'px) ' + g[2] + ';'
+        + 'transition:transform .55s cubic-bezier(.2,.7,.2,1);';
+      if (state.wire) {
+        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.07);border:0.6px solid ' + shade(p.c, 0.55) + ';backface-visibility:visible;';
+      } else {
+        st += 'background:' + shade(p.c, f.q[1]) + ';box-shadow:inset 0 0 0 0.5px rgba(0,0,0,.22);backface-visibility:hidden;';
+      }
+      if (p.label && f.q[0] === 'top') {
+        st += 'display:flex;align-items:center;justify-content:center;font:600 ' + p.ls + 'px ui-monospace,Menlo,Consolas,monospace;color:' + p.lc + ';';
+      }
+      f.el.style.cssText = st;
+    });
+    var lg = $('logo');
+    lg.style.cssText = 'position:absolute;left:50%;top:50%;width:78px;height:70px;margin-left:-39px;margin-top:-35px;'
+      + 'transform:translate3d(45px,' + (-4.5 + off.lid) + 'px,-25px) rotateX(90deg);'
+      + 'transition:transform .55s cubic-bezier(.2,.7,.2,1);backface-visibility:hidden;'
+      + (state.logo ? '' : 'display:none;');
+  }
+
+  $('shadow').style.cssText = 'position:absolute;left:50%;top:50%;width:340px;height:240px;margin-left:-170px;margin-top:-120px;'
+    + 'background:radial-gradient(ellipse at center,rgba(20,24,28,.32) 0%,rgba(20,24,28,0) 68%);transform:translate3d(0,51px,0) rotateX(90deg);';
+  $('grid').style.cssText = 'position:absolute;left:50%;top:50%;width:560px;height:420px;margin-left:-280px;margin-top:-210px;'
+    + 'background-image:linear-gradient(rgba(22,74,43,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(22,74,43,.16) 1px,transparent 1px);background-size:20px 20px;'
+    + '-webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);'
+    + 'transform:translate3d(0,52px,0) rotateX(90deg);';
+
+  function angDiff(a, b) { return Math.abs((((a - b) % 360) + 540) % 360 - 180); }
+
+  function applyScene() {
+    var moving = state.dragging || state.auto;
+    scene.style.transform = 'scale(' + (state.zoom * 1.9).toFixed(3) + ') rotateX(' + state.rx.toFixed(2) + 'deg) rotateY(' + state.ry.toFixed(2) + 'deg)';
+    scene.style.transition = moving ? 'none' : 'transform .6s cubic-bezier(.2,.7,.2,1)';
+    var ryN = ((((state.ry + 180) % 360) + 360) % 360) - 180;
+    $('readout').textContent = 'X ' + Math.round(state.rx) + '°  Y ' + Math.round(ryN) + '°  ·  240 × 150 × 54 mm';
+  }
+
+  // ---- tombol ----
+  var presets = [['Depan', 0, 0], ['Atas', -90, 0], ['Samping', 0, -90], ['Isometrik', -24, -32]];
+  var viewBtns = [], modeBtns = [], toggleBtns = [];
+
+  function mkBtn(parent, label, onClick) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn'; b.textContent = label;
+    b.addEventListener('click', onClick);
+    parent.appendChild(b);
+    return b;
+  }
+
+  presets.forEach(function (v) {
+    viewBtns.push({ b: mkBtn($('views'), v[0], function () {
+      var target = v[2] + 360 * Math.round((state.ry - v[2]) / 360);
+      state.rx = v[1]; state.ry = target; state.auto = false;
+      refreshUI();
+    }), v: v });
+  });
+  modeBtns.push({ b: mkBtn($('modes'), 'Solid', function () { state.wire = false; refreshUI(); }), on: function () { return !state.wire; } });
+  modeBtns.push({ b: mkBtn($('modes'), 'Kerangka', function () { state.wire = true; refreshUI(); }), on: function () { return state.wire; } });
+  toggleBtns.push({ b: mkBtn($('toggles'), 'Bongkar casing', function () { state.explode = !state.explode; refreshUI(); }), on: function () { return state.explode; } });
+  toggleBtns.push({ b: mkBtn($('toggles'), 'Putar otomatis', function () { state.auto = !state.auto; refreshUI(); }), on: function () { return state.auto; } });
+  toggleBtns.push({ b: mkBtn($('toggles'), 'Tampilkan logo', function () { state.logo = !state.logo; refreshUI(); }), on: function () { return state.logo; } });
+
+  function refreshUI() {
+    viewBtns.forEach(function (x) {
+      x.b.setAttribute('aria-pressed', String(Math.abs(state.rx - x.v[1]) < 1 && angDiff(state.ry, x.v[2]) < 1));
+    });
+    modeBtns.concat(toggleBtns).forEach(function (x) { x.b.setAttribute('aria-pressed', String(x.on())); });
+    applyFaces();
+    applyScene();
+  }
+
+  // ---- warna & zoom ----
+  function setColor(key, swId) {
+    return function (e) {
+      colors[key] = e.target.value;
+      $(swId).style.background = e.target.value;
+      recolor();
+    };
+  }
+  function recolor() {
+    var fresh = buildParts();
+    faceEls.forEach(function (f, i) { f.p.c = fresh[Math.floor(i / 6)].c; });
+    applyFaces();
+  }
+  $('cCase').addEventListener('input', setColor('caseC', 'swCase'));
+  $('cLid').addEventListener('input', setColor('lidC', 'swLid'));
+  $('cSensor').addEventListener('input', setColor('sensorC', 'swSensor'));
+  $('swCase').style.background = colors.caseC;
+  $('swLid').style.background = colors.lidC;
+  $('swSensor').style.background = colors.sensorC;
+  $('zoom').addEventListener('input', function (e) { state.zoom = Number(e.target.value); applyScene(); });
+
+  // ---- seret untuk memutar ----
+  var stage = $('stage');
+  stage.addEventListener('pointerdown', function (e) {
+    if (e.target.closest && e.target.closest('input,button')) return;
+    drag = { x: e.clientX, y: e.clientY, rx: state.rx, ry: state.ry };
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    state.dragging = true; applyScene();
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    state.rx = Math.max(-90, Math.min(90, drag.rx - (e.clientY - drag.y) * 0.5));
+    state.ry = drag.ry + (e.clientX - drag.x) * 0.5;
+    applyScene();
+    // pratinjau tombol sudut pandang
+    viewBtns.forEach(function (x) { x.b.setAttribute('aria-pressed', 'false'); });
+  });
+  function endDrag() { drag = null; state.dragging = false; refreshUI(); }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+
+  setInterval(function () {
+    if (state.auto && !drag) { state.ry += 0.6; applyScene(); }
+  }, 33);
+
+  refreshUI();
+})();
+</script>
+</body>
+</html>
