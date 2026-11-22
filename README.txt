@@ -15,6 +15,7 @@ Tinkercad/Wokwi berjalan di cloud, jadi datanya tidak mengalir otomatis ke websi
 
 ATURAN NOTIFIKASI
 - Suhu media > 38 C          : buzzer berbunyi + notifikasi suhu terlalu tinggi
+- Suhu ruangan > 38 C        : buzzer berbunyi + notifikasi suhu ruangan terlalu tinggi (aturan sama)
 - Kelembapan < 70 % atau > 90 % : notifikasi kelembapan tidak sesuai
 - pH > 7,5                   : notifikasi kemungkinan fermentasi berlebihan
 - Semua dalam batas          : status Normal

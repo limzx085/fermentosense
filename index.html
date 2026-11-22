@@ -122,10 +122,14 @@
         <article class="scard temp" id="cardTemp">
           <div class="sicon"><svg class="ic"><use href="#i-thermo"/></svg></div>
           <div class="sbody">
-            <div class="slabel">Suhu <span class="slabel-sub">(media)</span></div>
+            <div class="slabel">Suhu Media</div>
             <div class="sval" id="valTemp">--</div>
             <div class="chip idle" id="chipTemp"></div>
-            <div class="ssub" id="subTemp"></div>
+            <div class="subrow" id="rowAir">
+              <span class="sub-label">Suhu Ruangan</span>
+              <span class="sub-val" id="valAir">--</span>
+              <span class="chip sm idle" id="chipAir"></span>
+            </div>
           </div>
         </article>
 
@@ -165,7 +169,8 @@
           </div>
           <div class="chart" id="chart"></div>
           <div class="legend">
-            <span><i class="lg temp"></i>Suhu (°C)</span>
+            <span><i class="lg temp"></i>Suhu Media (°C)</span>
+            <span><i class="lg air"></i>Suhu Ruangan (°C)</span>
             <span><i class="lg hum"></i>Kelembapan (%)</span>
             <span><i class="lg ph"></i>pH</span>
             <span class="lg-note"><i class="lg-dash"></i>garis putus = batas notifikasi</span>
@@ -229,7 +234,7 @@
         <div class="card-head"><h2>Data Sensor Terbaru</h2><span class="muted" id="histCount"></span></div>
         <div class="table-wrap">
           <table class="tbl" id="histTable">
-            <thead><tr><th>Waktu</th><th>Jam ke-</th><th>Suhu Media (°C)</th><th>Suhu Udara (°C)</th><th>Kelembapan (%)</th><th>pH</th><th>Status</th></tr></thead>
+            <thead><tr><th>Waktu</th><th>Jam ke-</th><th>Suhu Media (°C)</th><th>Suhu Ruangan (°C)</th><th>Kelembapan (%)</th><th>pH</th><th>Status</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -254,6 +259,7 @@
           <div class="card-head"><h2>Batas Parameter &amp; Notifikasi</h2></div>
           <div class="form-grid">
             <label>Suhu media maks. (°C)<input type="number" id="setTempMax" step="0.1" required><small>Di atas ini: buzzer + notifikasi suhu terlalu tinggi.</small></label>
+            <label>Suhu ruangan maks. (°C)<input type="number" id="setAirMax" step="0.1" required><small>Aturan sama dengan suhu media: buzzer + notifikasi.</small></label>
             <label>pH maks.<input type="number" id="setPhMax" step="0.1" required><small>Di atas ini: kemungkinan fermentasi berlebihan.</small></label>
             <label>Kelembapan min. (%)<input type="number" id="setHumMin" step="1" required><small>Di bawah ini: kelembapan tidak sesuai.</small></label>
             <label>Kelembapan maks. (%)<input type="number" id="setHumMax" step="1" required><small>Di atas ini: kelembapan tidak sesuai.</small></label>
@@ -333,6 +339,7 @@
             <thead><tr><th>Parameter</th><th>Kondisi</th><th>Aksi</th></tr></thead>
             <tbody>
               <tr><td>Suhu media</td><td>&gt; <span data-th="tempMax">38</span> °C</td><td>Buzzer berbunyi + notifikasi “suhu terlalu tinggi”</td></tr>
+              <tr><td>Suhu ruangan</td><td>&gt; <span data-th="airMax">38</span> °C</td><td>Buzzer berbunyi + notifikasi “suhu ruangan terlalu tinggi”</td></tr>
               <tr><td>Kelembapan udara</td><td>&lt; <span data-th="humMin">70</span> % atau &gt; <span data-th="humMax">90</span> % RH</td><td>Notifikasi “kelembapan tidak sesuai”</td></tr>
               <tr><td>pH</td><td>&gt; <span data-th="phMax">7,5</span></td><td>Notifikasi “kemungkinan fermentasi berlebihan”</td></tr>
               <tr><td>Semua parameter dalam batas</td><td>–</td><td>Dashboard menampilkan status <b>Normal</b></td></tr>
@@ -404,7 +411,7 @@ DHT22 Humidity: 50.5 %	DHT22 Temperature: 23.1 ºC
     <p class="muted">Meniru sensor Tinkercad. Geser slider seperti memutar TMP36 / potensiometer; data dikirim tiap detik.</p>
     <div class="sliders">
       <label>Suhu media – TMP36 #1 <output id="oTemp">31,2 °C</output><input type="range" id="simTemp" min="15" max="50" step="0.1" value="31.2"></label>
-      <label>Suhu udara – TMP36 #2 <output id="oAir">29,0 °C</output><input type="range" id="simAir" min="15" max="50" step="0.1" value="29"></label>
+      <label>Suhu ruangan – TMP36 #2 <output id="oAir">29,0 °C</output><input type="range" id="simAir" min="15" max="50" step="0.1" value="29"></label>
       <label>Kelembapan – Potensiometer #1 <output id="oHum">74 %</output><input type="range" id="simHum" min="0" max="100" step="1" value="74"></label>
       <label>pH – Potensiometer #2 <output id="oPh">5,7</output><input type="range" id="simPh" min="0" max="14" step="0.1" value="5.7"></label>
     </div>
@@ -412,6 +419,7 @@ DHT22 Humidity: 50.5 %	DHT22 Temperature: 23.1 ºC
       <span>Skenario:</span>
       <button type="button" class="chip-btn" data-preset="normal">Normal</button>
       <button type="button" class="chip-btn" data-preset="hot">Suhu tinggi</button>
+      <button type="button" class="chip-btn" data-preset="hotRoom">Ruangan panas</button>
       <button type="button" class="chip-btn" data-preset="dry">Kelembapan rendah</button>
       <button type="button" class="chip-btn" data-preset="wet">Kelembapan tinggi</button>
       <button type="button" class="chip-btn" data-preset="acid">pH tinggi</button>

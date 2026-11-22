@@ -4,9 +4,9 @@
   agar langsung terbaca dashboard.
 
   DS18B20 x3  : GPIO 4, 5, 18   -> suhu media (rata-rata 3 probe)
-  DHT22       : GPIO 15         -> suhu udara + kelembapan
+  DHT22       : GPIO 15         -> suhu ruangan + kelembapan
   Sensor pH   : GPIO 34 (ADC)   -> di Wokwi pakai potensiometer (0-3,3 V = pH 0-14)
-  Buzzer      : GPIO 25         -> berbunyi jika suhu media > SUHU_MAX
+  Buzzer      : GPIO 25         -> berbunyi jika suhu media ATAU suhu ruangan > SUHU_MAX
   (butuh pustaka: OneWire, DallasTemperature, DHT sensor library; tone() butuh arduino-esp32 3.x)
 
   Keluaran Serial (115200 baud), satu baris per siklus:
@@ -60,17 +60,19 @@ void loop() {
   float suhuMedia = n ? jumlah / n : NAN;
 
   float kelembapan = dht.readHumidity();
-  float suhuUdara  = dht.readTemperature();
+  float suhuRuangan = dht.readTemperature();
   float ph = analogRead(PIN_PH) * 14.0 / 4095.0;
 
-  if (!isnan(suhuMedia) && suhuMedia > SUHU_MAX) tone(PIN_BUZZER, 1000);
+  bool terlaluPanas = (!isnan(suhuMedia) && suhuMedia > SUHU_MAX) ||
+                      (!isnan(suhuRuangan) && suhuRuangan > SUHU_MAX);
+  if (terlaluPanas) tone(PIN_BUZZER, 1000);
   else noTone(PIN_BUZZER);
 
-  if (isnan(suhuMedia) || isnan(kelembapan) || isnan(suhuUdara)) {
+  if (isnan(suhuMedia) || isnan(kelembapan) || isnan(suhuRuangan)) {
     Serial.println("Error: sensor gagal dibaca");
   } else {
     Serial.print("T=");   Serial.print(suhuMedia, 1);
-    Serial.print(";A=");  Serial.print(suhuUdara, 1);
+    Serial.print(";A=");  Serial.print(suhuRuangan, 1);
     Serial.print(";H=");  Serial.print(kelembapan, 1);
     Serial.print(";PH="); Serial.println(ph, 2);
   }

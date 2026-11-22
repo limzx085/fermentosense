@@ -30,7 +30,7 @@ const HOUR = 3600000;
 const KEYS = { settings:'fs.settings.v1', samples:'fs.samples.v1', notifs:'fs.notifs.v1', last:'fs.last.v1' };
 const DEFAULTS = {
   batchName:'Fermentasi Tempe', batchId:'T-001', start:Date.now(), durationH:24,
-  tempMax:38, humMin:70, humMax:90, phMax:7.5, interval:10, buzzer:true
+  tempMax:38, airMax:38, humMin:70, humMax:90, phMax:7.5, interval:10, buzzer:true
 };
 const store = {
   get(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } },
@@ -42,7 +42,7 @@ let settings = { ...DEFAULTS, ...store.get(KEYS.settings, {}) };
 let samples  = store.get(KEYS.samples, []);      // {ts,temp,air,hum,ph}
 let notifs   = store.get(KEYS.notifs, []);       // {id,ts,type,param,title,text,read}
 let last     = store.get(KEYS.last, null);       // pembacaan terakhir
-let alarm    = { temp:'ok', hum:'ok', ph:'ok' }; // status per parameter
+let alarm    = { temp:'ok', air:'ok', hum:'ok', ph:'ok' }; // status per parameter
 let lastRecordTs = samples.length ? samples[samples.length - 1].ts : 0;
 let lastSeen = 0;                                // waktu (Date.now) data terakhir masuk
 let src = { type:'none', label:'Belum terhubung' };
@@ -71,7 +71,7 @@ window.addEventListener('beforeunload', flushSave);
    ===================================================================== */
 const KEYMAP = {
   t:'temp', suhu:'temp', temp:'temp', temperature:'temp', suhu_media:'temp', media:'temp', tmedia:'temp',
-  a:'air', udara:'air', air:'air', suhu_udara:'air', tudara:'air', dht:'air',
+  a:'air', udara:'air', air:'air', suhu_udara:'air', tudara:'air', dht:'air', ruangan:'air', suhu_ruangan:'air', room:'air',
   h:'hum', rh:'hum', hum:'hum', humidity:'hum', kelembapan:'hum', kelembaban:'hum',
   ph:'ph'
 };
@@ -134,13 +134,13 @@ function feedLine(line) {
        pH          : 5.70
        ALARM: ...  /  STATUS: NORMAL
      Blok baru keluar saat baris pH tiba (baris terakhir berisi angka). */
-  const tk = new RegExp('^\\s*(Suhu\\s*Media|Suhu\\s*Udara|Kelembapan|Kelembaban|pH)\\s*:\\s*' + NUM, 'i').exec(line);
+  const tk = new RegExp('^\\s*(Suhu\\s*Media|Suhu\\s*Udara|Suhu\\s*Ruangan|Kelembapan|Kelembaban|pH)\\s*:\\s*' + NUM, 'i').exec(line);
   if (tk) {
     const k = tk[1].toLowerCase().replace(/\s+/g, '');
     const v = parseFloat(tk[2].replace(',', '.'));
     asm.tk = asm.tk || {};
     if (k === 'suhumedia') asm.tk.temp = v;
-    else if (k === 'suhuudara') asm.tk.air = v;
+    else if (k === 'suhuudara' || k === 'suhuruangan') asm.tk.air = v;
     else if (k === 'ph') { const r = { ...asm.tk, ph: v }; asm.tk = null; return r; }
     else asm.tk.hum = v;
     return null;
@@ -152,21 +152,24 @@ function feedLine(line) {
 /* =====================================================================
    2. ATURAN – sesuai parameter FermentoSense
       suhu media > 38 °C   -> buzzer + notifikasi
+      suhu ruangan > 38 °C -> buzzer + notifikasi (aturan sama dengan suhu media)
       kelembapan <70 / >90 -> notifikasi
       pH > 7,5             -> notifikasi
    ===================================================================== */
 function evalReading(r, th) {
-  const s = { temp:'ok', hum:'ok', ph:'ok' };
+  const s = { temp:'ok', air:'ok', hum:'ok', ph:'ok' };
   if (isNum(r.temp) && r.temp > th.tempMax) s.temp = 'high';
+  if (isNum(r.air) && r.air > th.airMax) s.air = 'high';
   if (isNum(r.hum)) { if (r.hum < th.humMin) s.hum = 'low'; else if (r.hum > th.humMax) s.hum = 'high'; }
   if (isNum(r.ph) && r.ph > th.phMax) s.ph = 'high';
   return s;
 }
-const allOk = s => s.temp === 'ok' && s.hum === 'ok' && s.ph === 'ok';
+const allOk = s => s.temp === 'ok' && s.air === 'ok' && s.hum === 'ok' && s.ph === 'ok';
 
 function warnMessage(k, state, r) {
   const th = settings;
   if (k === 'temp') return { title:'Peringatan Suhu', text:`Suhu media mencapai ${fmt(r.temp)} °C (di atas batas ${fmt(th.tempMax)} °C). Buzzer berbunyi.` };
+  if (k === 'air')  return { title:'Peringatan Suhu Ruangan', text:`Suhu ruangan mencapai ${fmt(r.air)} °C (di atas batas ${fmt(th.airMax)} °C). Buzzer berbunyi.` };
   if (k === 'hum')  return { title:'Kelembapan Tidak Sesuai', text: state === 'low'
       ? `Kelembapan ${fmt(r.hum, 0)} % (di bawah batas ${fmt(th.humMin, 0)} %).`
       : `Kelembapan ${fmt(r.hum, 0)} % (di atas batas ${fmt(th.humMax, 0)} %).` };
@@ -174,6 +177,7 @@ function warnMessage(k, state, r) {
 }
 function okMessage(k, r) {
   const text = k === 'temp' ? `Suhu turun ke ${fmt(r.temp)} °C`
+             : k === 'air'  ? `Suhu ruangan turun ke ${fmt(r.air)} °C`
              : k === 'hum'  ? `Kelembapan kembali ke ${fmt(r.hum, 0)} %`
              :                `pH kembali ke ${fmt(r.ph, 2)}`;
   return { title:'Kondisi Kembali Normal', text };
@@ -181,6 +185,7 @@ function okMessage(k, r) {
 function issueList(s, r) {
   const out = [];
   if (s.temp !== 'ok') out.push(`Suhu media terlalu tinggi (${fmt(r.temp)} °C)`);
+  if (s.air !== 'ok') out.push(`Suhu ruangan terlalu tinggi (${fmt(r.air)} °C)`);
   if (s.hum === 'low')  out.push(`Kelembapan di bawah ${fmt(settings.humMin, 0)} % (${fmt(r.hum, 0)} %)`);
   if (s.hum === 'high') out.push(`Kelembapan di atas ${fmt(settings.humMax, 0)} % (${fmt(r.hum, 0)} %)`);
   if (s.ph !== 'ok')   out.push(`pH tinggi, kemungkinan fermentasi berlebihan (${fmt(r.ph, 2)})`);
@@ -190,14 +195,14 @@ function issueList(s, r) {
 let notifSeq = notifs.reduce((a, n) => Math.max(a, n.id || 0), 0);
 function processAlarms(st, r, ts) {
   let changed = false;
-  for (const k of ['temp', 'hum', 'ph']) {
+  for (const k of ['temp', 'air', 'hum', 'ph']) {
     if (st[k] === alarm[k]) continue;
     const warn = st[k] !== 'ok';
     const msg = warn ? warnMessage(k, st[k], r) : okMessage(k, r);
     notifs.unshift({ id:++notifSeq, ts, type: warn ? 'warn' : 'ok', param:k, title:msg.title, text:msg.text, read:false });
     if (notifs.length > MAX_NOTIFS) notifs.length = MAX_NOTIFS;
-    if (k === 'temp' && !warn) muted = false;
     alarm[k] = st[k];
+    if (alarm.temp !== 'high' && alarm.air !== 'high') muted = false;   // buzzer berhenti -> reset "bisukan"
     changed = true;
   }
   return changed;
@@ -247,7 +252,7 @@ function beep() {
   o.start(); o.stop(audioCtx.currentTime + 0.3);
 }
 const isLive = () => src.type !== 'none' && Date.now() - lastSeen < 15000;
-const buzzerRinging = () => alarm.temp === 'high' && isLive();
+const buzzerRinging = () => (alarm.temp === 'high' || alarm.air === 'high') && isLive();
 setInterval(() => { if (buzzerRinging() && settings.buzzer && !muted) beep(); }, 1000);
 
 /* =====================================================================
@@ -286,13 +291,26 @@ function setCard(id, val, dec, unit, state, range) {
   const word = ok ? 'Dalam batas' : state === 'low' ? 'Di bawah batas' : 'Di atas batas';
   chip.innerHTML = `<svg class="ic"><use href="#i-${ok ? 'check' : 'alert'}"/></svg><span>${word} (${range})</span>`;
 }
+/* Baris "Suhu Ruangan" di dalam kartu Suhu (aturan sama dengan suhu media). */
+function setAirRow(st) {
+  const has = isNum(last?.air), row = $('#rowAir'), chip = $('#chipAir');
+  $('#valAir').textContent = has ? `${fmt(last.air)} °C` : '--';
+  row.classList.toggle('warn', has && st.air !== 'ok');
+  if (!has) { chip.className = 'chip sm idle'; chip.textContent = 'Menunggu data'; return; }
+  const ok = st.air === 'ok';
+  chip.className = 'chip sm ' + (ok ? 'ok' : 'bad');
+  chip.innerHTML = `<svg class="ic"><use href="#i-${ok ? 'check' : 'alert'}"/></svg><span>${ok ? 'Dalam batas' : 'Di atas batas'} (≤ ${fmt(settings.airMax)} °C)</span>`;
+}
 function renderCards() {
   const st = last ? evalReading(last, settings) : {};
   const th = settings;
   setCard('Temp', last?.temp, 1, ' °C', st.temp, `≤ ${fmt(th.tempMax)} °C`);
   setCard('Hum',  last?.hum, 0, ' %',  st.hum,  `${fmt(th.humMin, 0)} – ${fmt(th.humMax, 0)} %`);
   setCard('Ph',   last?.ph,  1, '',    st.ph,   `≤ ${fmt(th.phMax)}`);
-  $('#subTemp').textContent = isNum(last?.air) ? `Suhu udara: ${fmt(last.air)} °C` : '';
+  setAirRow(st);
+  // kartu Suhu merah jika suhu media ATAU suhu ruangan melewati batas
+  const tempBad = (isNum(last?.temp) && st.temp !== 'ok') || (isNum(last?.air) && st.air !== 'ok');
+  $('#cardTemp').classList.toggle('warn', tempBad);
 }
 
 function renderStatus() {
@@ -369,7 +387,7 @@ function renderSource() {
 }
 
 /* ---------- grafik (SVG buatan sendiri, tanpa library) ---------- */
-const COLORS = { temp:'#f28c1a', hum:'#2f86e0', ph:'#8a4fc1' };
+const COLORS = { temp:'#f28c1a', air:'#14a39a', hum:'#2f86e0', ph:'#8a4fc1' };
 function niceStep(raw) {
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
   for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw - 1e-9) return m * p;
@@ -424,7 +442,7 @@ function renderChart() {
 
   const col = k => pts.filter(p => isNum(p[k])).map(p => p[k]);
   const th = settings;
-  const aT = makeAxis(24, 44, [...col('temp'), th.tempMax]);
+  const aT = makeAxis(24, 44, [...col('temp'), ...col('air'), th.tempMax, th.airMax]);
   const aH = makeAxis(50, 100, [...col('hum'), th.humMin, th.humMax]);
   const aP = makeAxis(4, 9, [...col('ph'), th.phMax]);
   const X = x => m.l + pw * (x - x0) / (x1 - x0 || 1);
@@ -458,10 +476,10 @@ function renderChart() {
   // garis batas notifikasi
   const dash = (a, v, c) => (v >= a.min && v <= a.max)
     ? `<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(a, v)}" y2="${Y(a, v)}" stroke="${c}" stroke-width="1.2" stroke-dasharray="5 5" opacity=".55"/>` : '';
-  s += dash(aT, th.tempMax, COLORS.temp) + dash(aH, th.humMin, COLORS.hum) + dash(aH, th.humMax, COLORS.hum) + dash(aP, th.phMax, COLORS.ph);
+  s += dash(aT, th.tempMax, COLORS.temp) + (th.airMax !== th.tempMax ? dash(aT, th.airMax, COLORS.air) : '') + dash(aH, th.humMin, COLORS.hum) + dash(aH, th.humMax, COLORS.hum) + dash(aP, th.phMax, COLORS.ph);
 
   // data
-  const series = [['temp', aT], ['hum', aH], ['ph', aP]];
+  const series = [['temp', aT], ['air', aT], ['hum', aH], ['ph', aP]];
   if (!pts.length) {
     s += `<text x="${m.l + pw / 2}" y="${m.t + ph / 2}" text-anchor="middle" font-size="15" fill="#7b8a82">Belum ada data pada rentang ini. Klik “Sumber Data” untuk memulai.</text>`;
   }
@@ -492,7 +510,7 @@ function renderChart() {
     xh.setAttribute('x1', cx); xh.setAttribute('x2', cx); xh.setAttribute('visibility', 'visible');
     tip.innerHTML = `<b>Jam ke-${fmt(best.x, 2)} · ${fmtHMS(best.ts)}</b>` +
       `<i style="background:${COLORS.temp}"></i>Suhu media: ${fmt(best.temp)} °C<br>` +
-      (isNum(best.air) ? `<i style="background:#c9a66b"></i>Suhu udara: ${fmt(best.air)} °C<br>` : '') +
+      (isNum(best.air) ? `<i style="background:${COLORS.air}"></i>Suhu ruangan: ${fmt(best.air)} °C<br>` : '') +
       `<i style="background:${COLORS.hum}"></i>Kelembapan: ${fmt(best.hum, 0)} %<br>` +
       `<i style="background:${COLORS.ph}"></i>pH: ${fmt(best.ph, 2)}`;
     tip.style.display = 'block';
@@ -514,7 +532,7 @@ function renderHistory() {
       : '<dt>Belum ada data</dt><dd></dd>';
     return `<section class="card stat"><h3><svg class="ic green"><use href="#i-${icon}"/></svg>${label}</h3><dl>${body}</dl></section>`;
   };
-  $('#statGrid').innerHTML = stat('temp', 'Suhu Media', 1, ' °C', 'thermo') + stat('hum', 'Kelembapan', 0, ' %', 'drop') + stat('ph', 'pH', 2, '', 'flask');
+  $('#statGrid').innerHTML = stat('temp', 'Suhu Media', 1, ' °C', 'thermo') + stat('air', 'Suhu Ruangan', 1, ' °C', 'thermo') +stat('hum', 'Kelembapan', 0, ' %', 'drop') + stat('ph', 'pH', 2, '', 'flask');
 
   const rows = samples.slice(-200).reverse();
   $('#histCount').textContent = samples.length ? `Menampilkan ${rows.length} dari ${samples.length} data` : '';
@@ -527,14 +545,14 @@ function renderHistory() {
 }
 
 function renderHelpThresholds() {
-  const map = { tempMax:[settings.tempMax, 1], humMin:[settings.humMin, 0], humMax:[settings.humMax, 0], phMax:[settings.phMax, 1] };
+  const map = { tempMax:[settings.tempMax, 1], airMax:[settings.airMax, 1], humMin:[settings.humMin, 0], humMax:[settings.humMax, 0], phMax:[settings.phMax, 1] };
   $$('[data-th]').forEach(el => { const [v, d] = map[el.dataset.th]; el.textContent = fmt(v, d); });
 }
 
 /* ---------- ekspor CSV ---------- */
 function downloadCSV() {
   if (!samples.length) return toast('Belum ada data untuk diunduh.');
-  const head = ['waktu', 'jam_ke', 'suhu_media_C', 'suhu_udara_C', 'kelembapan_persen', 'pH', 'status'];
+  const head = ['waktu', 'jam_ke', 'suhu_media_C', 'suhu_ruangan_C', 'kelembapan_persen', 'pH', 'status'];
   const val = v => isNum(v) ? v : '';
   const rows = samples.map(s => {
     const st = evalReading(s, settings);
@@ -580,7 +598,7 @@ function simStop() {
   $('#simToggle').textContent = 'Mulai Simulator';
 }
 const PRESETS = {
-  normal:{temp:31.2, air:29, hum:74, ph:5.7}, hot:{temp:39.5, air:30, hum:74, ph:5.7},
+  normal:{temp:31.2, air:29, hum:74, ph:5.7}, hot:{temp:39.5, air:30, hum:74, ph:5.7}, hotRoom:{temp:31.2, air:39.5, hum:74, ph:5.7},
   dry:{temp:32, air:29, hum:62, ph:5.8}, wet:{temp:32, air:29, hum:93, ph:5.8}, acid:{temp:32, air:29, hum:75, ph:7.9}
 };
 function syncSliders() {
@@ -706,7 +724,7 @@ const toLocalInput = ts => { const d = new Date(ts); return `${d.getFullYear()}-
 function fillSettingsForm() {
   $('#setBatchName').value = settings.batchName; $('#setBatchId').value = settings.batchId;
   $('#setStart').value = toLocalInput(settings.start); $('#setDuration').value = settings.durationH;
-  $('#setTempMax').value = settings.tempMax; $('#setPhMax').value = settings.phMax;
+  $('#setTempMax').value = settings.tempMax; $('#setAirMax').value = settings.airMax; $('#setPhMax').value = settings.phMax;
   $('#setHumMin').value = settings.humMin; $('#setHumMax').value = settings.humMax;
   $('#setInterval').value = settings.interval; $('#setBuzzer').checked = settings.buzzer;
 }
@@ -717,11 +735,11 @@ $('#settingsForm').addEventListener('submit', e => {
     batchName: $('#setBatchName').value.trim() || DEFAULTS.batchName,
     batchId: $('#setBatchId').value.trim() || DEFAULTS.batchId,
     start: new Date($('#setStart').value).getTime(),
-    durationH: n('setDuration'), tempMax: n('setTempMax'), phMax: n('setPhMax'),
+    durationH: n('setDuration'), tempMax: n('setTempMax'), airMax: n('setAirMax'), phMax: n('setPhMax'),
     humMin: n('setHumMin'), humMax: n('setHumMax'), interval: Math.round(n('setInterval')),
     buzzer: $('#setBuzzer').checked
   };
-  if (![next.start, next.durationH, next.tempMax, next.phMax, next.humMin, next.humMax, next.interval].every(Number.isFinite)) return toast('Periksa kembali isian: ada nilai yang tidak valid.');
+  if (![next.start, next.durationH, next.tempMax, next.airMax, next.phMax, next.humMin, next.humMax, next.interval].every(Number.isFinite)) return toast('Periksa kembali isian: ada nilai yang tidak valid.');
   if (next.humMin >= next.humMax) return toast('Batas kelembapan minimum harus lebih kecil dari maksimum.');
   if (next.durationH < 1 || next.interval < 1) return toast('Durasi dan interval minimal 1.');
   settings = { ...settings, ...next };
@@ -729,13 +747,13 @@ $('#settingsForm').addEventListener('submit', e => {
   flushSave(); renderAll(); toast('Pengaturan disimpan.');
 });
 $('#btnDefaults').addEventListener('click', () => {
-  Object.assign(settings, { tempMax:DEFAULTS.tempMax, humMin:DEFAULTS.humMin, humMax:DEFAULTS.humMax, phMax:DEFAULTS.phMax });
+  Object.assign(settings, { tempMax:DEFAULTS.tempMax, airMax:DEFAULTS.airMax, humMin:DEFAULTS.humMin, humMax:DEFAULTS.humMax, phMax:DEFAULTS.phMax });
   fillSettingsForm(); if (last) alarm = evalReading(last, settings); flushSave(); renderAll(); toast('Batas dikembalikan ke default.');
 });
 
 function resetData() {
   samples = []; notifs = []; last = null; lastRecordTs = 0; lastSeen = 0;
-  alarm = { temp:'ok', hum:'ok', ph:'ok' }; muted = false;
+  alarm = { temp:'ok', air:'ok', hum:'ok', ph:'ok' }; muted = false;
 }
 $('#btnNewBatch').addEventListener('click', () => {
   if (!confirm('Mulai batch baru? Riwayat dan notifikasi batch ini akan dihapus.')) return;
@@ -786,17 +804,17 @@ const SKETCH = `/*
   FermentoSense - versi Tinkercad Circuits (Arduino Uno)
 
   A0 : TMP36 pertama   -> suhu media    (pengganti DS18B20)
-  A1 : TMP36 kedua     -> suhu udara    (pengganti suhu DHT22)
+  A1 : TMP36 kedua     -> suhu ruangan  (pengganti suhu DHT22)
   A2 : Potensiometer 1 -> kelembapan    (pengganti kelembapan DHT22), 0-100 %
   A3 : Potensiometer 2 -> pH            (pengganti sensor pH),        0-14
-  D8 : Piezo buzzer    -> bunyi jika suhu media > SUHU_MAX
+  D8 : Piezo buzzer    -> bunyi jika suhu media ATAU suhu ruangan > SUHU_MAX
 
   Keluaran Serial (9600 baud), satu baris per detik:
   T=31.2;A=29.0;H=74.0;PH=5.70
 */
 
 const int PIN_SUHU_MEDIA = A0;
-const int PIN_SUHU_UDARA = A1;
+const int PIN_SUHU_RUANGAN = A1;
 const int PIN_RH         = A2;
 const int PIN_PH         = A3;
 const int PIN_BUZZER     = 8;
@@ -821,19 +839,19 @@ void setup() {
 
 void loop() {
   float suhuMedia  = bacaTMP36(PIN_SUHU_MEDIA);
-  float suhuUdara  = bacaTMP36(PIN_SUHU_UDARA);
+  float suhuRuangan = bacaTMP36(PIN_SUHU_RUANGAN);
   float kelembapan = analogRead(PIN_RH) * 100.0 / 1023.0;
   float ph         = analogRead(PIN_PH) * 14.0 / 1023.0;
 
-  // Buzzer: berbunyi saat suhu media > 38 C
-  if (suhuMedia > SUHU_MAX) {
+  // Buzzer: berbunyi saat suhu media ATAU suhu ruangan > 38 C
+  if (suhuMedia > SUHU_MAX || suhuRuangan > SUHU_MAX) {
     tone(PIN_BUZZER, 1000);
   } else {
     noTone(PIN_BUZZER);
   }
 
   Serial.print("T=");   Serial.print(suhuMedia, 1);
-  Serial.print(";A=");  Serial.print(suhuUdara, 1);
+  Serial.print(";A=");  Serial.print(suhuRuangan, 1);
   Serial.print(";H=");  Serial.print(kelembapan, 1);
   Serial.print(";PH="); Serial.println(ph, 2);
 
