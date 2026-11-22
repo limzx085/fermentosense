@@ -235,6 +235,8 @@ dialog::backdrop{background:rgba(10,30,20,.5)}
 .sliders output{float:right;font-weight:700;color:var(--g700)}
 .sliders input[type=range]{width:100%;accent-color:var(--g600);margin-top:6px}
 .presets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.filebox{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:2px dashed #c5d3ca;border-radius:12px;background:var(--g50)}
+.filebox small{flex:1;min-width:200px;color:var(--muted);font-size:12.5px;line-height:1.45}
 .paste-opts{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;justify-content:space-between}
 textarea{font-family:Consolas,monospace;font-size:13px;resize:vertical}
 

@@ -615,18 +615,131 @@ $('#simOnce').addEventListener('click', () => { if (!sim.timer) setSource('sim',
 /* --- tempel dari Serial Monitor Tinkercad --- */
 /* Satu pintu untuk semua cara menempel (tombol Tempel Data, Ctrl+V, kotak di jendela Sumber Data).
    Mengembalikan jumlah pembacaan yang berhasil dikenali. */
-function importText(text) {
+
+/* ---------- tabel / JSON berjudul kolom (hasil Google Colab, file CSV, ekspor dashboard sendiri) ---------- */
+const COLMAP = {
+  waktu:'time', timestamp:'time', time:'time', datetime:'time', tanggal:'time', date:'time',
+  jam_ke:'hours', jam:'hours', hour:'hours', hours:'hours',
+  suhu_media:'temp', suhumedia:'temp', temp:'temp', temperature:'temp', suhu:'temp', media:'temp', temp_media:'temp', tmedia:'temp',
+  suhu_ruangan:'air', suhu_ruang:'air', suhu_udara:'air', ruangan:'air', udara:'air', room:'air', air:'air', temp_room:'air', temp_air:'air',
+  kelembapan:'hum', kelembaban:'hum', kelembapan_udara:'hum', humidity:'hum', hum:'hum', rh:'hum',
+  ph:'ph'
+};
+/* nama kolom -> 'time' | 'hours' | 'temp' | 'air' | 'hum' | 'ph' | null (mis. "status" diabaikan) */
+function colKey(h) {
+  let k = String(h).trim().toLowerCase().replace(/[()\[\]%°"']/g, '').replace(/[\s\-\/]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  k = k.replace(/_(c|persen|pct|percent|celsius|derajat)$/, '');
+  return COLMAP[k] || KEYMAP[k] || null;
+}
+function parseTime(v) {
+  v = String(v).trim();
+  if (!v) return NaN;
+  if (/^\d{9,13}$/.test(v)) { const n = +v; return n > 1e12 ? n : n * 1000; }      // epoch detik / milidetik
+  return Date.parse(v.replace(' ', 'T'));                                             // "2025-01-20 08:00:00" -> waktu lokal
+}
+function splitCSV(line, d) {
+  const out = []; let cur = '', q = false;
+  for (const ch of line) {
+    if (ch === '"') q = !q;
+    else if (ch === d && !q) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+/* Mengisi {r, ts, hrs} dari pasangan kolom->nilai; mengembalikan null jika tak ada nilai sensor. */
+function rowFrom(pairs) {
+  const r = {}; let ts = NaN, hrs = NaN;
+  for (const [name, raw] of pairs) {
+    const key = colKey(name); if (!key) continue;
+    if (key === 'time') { ts = parseTime(raw); continue; }
+    const n = parseFloat(String(raw).trim().replace(',', '.'));
+    if (!Number.isFinite(n)) continue;
+    if (key === 'hours') hrs = n; else r[key] = n;
+  }
+  return Object.keys(r).length ? { r, ts, hrs } : null;
+}
+function parseTable(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+  const d = [',', ';', '\t'].reduce((a, b) => lines[0].split(b).length > lines[0].split(a).length ? b : a);
+  const heads = splitCSV(lines[0], d).map(h => h.trim());
+  if (heads.length < 2 || heads.every(h => Number.isFinite(Number(h.replace(',', '.'))))) return null;   // baris pertama bukan judul
+  if (!heads.some(h => { const k = colKey(h); return k && k !== 'time' && k !== 'hours'; })) return null;
+  return lines.slice(1).map(l => {
+    const cells = splitCSV(l, d);
+    return rowFrom(heads.map((h, i) => [h, cells[i] ?? '']));
+  }).filter(Boolean);
+}
+function parseJSONRows(text) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch {                                                                                // JSON Lines: satu objek per baris
+    data = [];
+    for (const l of text.split(/\r?\n/)) { const t = l.trim(); if (!t) continue; try { data.push(JSON.parse(t)); } catch { return null; } }
+  }
+  if (!Array.isArray(data)) data = [data];
+  const rows = data.filter(o => o && typeof o === 'object').map(o => rowFrom(Object.entries(o))).filter(Boolean);
+  return rows.length ? rows : null;
+}
+
+/* Mengimpor teks apa pun yang dikenali. Mengembalikan jumlah pembacaan.
+   - Ada kolom waktu / jam_ke  -> data historis (waktu asli dipakai, tidak memicu buzzer web)
+   - Tanpa waktu               -> dianggap data baru, berurutan berakhir "sekarang" */
+function importText(text, opts = {}) {
   const gap = Math.max(1, +$('#pasteGap').value || 1) * 1000;
   asm.ds = {}; asm.tk = null;
-  const parsed = String(text || '').split(/\r?\n/).map(feedLine).filter(Boolean);
-  if (!parsed.length) return 0;
-  const first = Date.now() - (parsed.length - 1) * gap;
-  if (first < settings.start) { settings.start = first; fillSettingsForm(); }   // data lebih awal dari waktu mulai batch
-  setSource('paste', 'Input manual');
-  parsed.forEach((r, i) => ingest(r, { ts: first + i * gap, forceRecord:true }));
-  return parsed.length;
+  text = String(text || '');
+  let rows = /^\s*[\[{]/.test(text) ? parseJSONRows(text.trim()) : null;
+  if (!rows) rows = parseTable(text);
+  if (!rows) rows = text.split(/\r?\n/).map(feedLine).filter(Boolean).map(r => ({ r, ts:NaN, hrs:NaN }));
+  if (!rows.length) return 0;
+
+  const hasTime = rows.some(x => Number.isFinite(x.ts) || Number.isFinite(x.hrs));
+  if (hasTime) {
+    let prev = settings.start - gap;
+    for (const x of rows) {
+      x.t = Number.isFinite(x.ts) ? x.ts : Number.isFinite(x.hrs) ? settings.start + x.hrs * HOUR : prev + gap;
+      prev = x.t;
+    }
+    rows.sort((a, b) => a.t - b.t);
+  } else {
+    const first = Date.now() - (rows.length - 1) * gap;
+    rows.forEach((x, i) => { x.t = first + i * gap; });
+  }
+  if (rows[0].t < settings.start) { settings.start = rows[0].t; fillSettingsForm(); }   // data lebih awal dari waktu mulai batch
+  setSource('paste', opts.label || 'Input manual');
+  rows.forEach(x => ingest(x.r, { ts:x.t, forceRecord:true, silent:hasTime }));
+  if (hasTime) {                                                // data historis: urutkan, bacaan terbaru = sampel paling akhir
+    samples.sort((a, b) => a.ts - b.ts);
+    notifs.sort((a, b) => b.ts - a.ts);
+    const l = samples[samples.length - 1];
+    lastRecordTs = l.ts; last = { ...l }; alarm = evalReading(last, settings);
+    flushSave(); scheduleRender();
+  }
+  return rows.length;
 }
-const NO_DATA_MSG = 'Tidak ada data sensor yang dikenali. Salin teks dari Serial Monitor (blok “HASIL MONITORING” atau baris T=…;A=…;H=…;PH=…).';
+const NO_DATA_MSG = 'Tidak ada data sensor yang dikenali. Pakai teks Serial Monitor, CSV/JSON berjudul kolom (waktu, suhu_media, suhu_ruangan, kelembapan, pH), atau baris T=…;A=…;H=…;PH=….';
+
+/* Upload / seret file (.csv .txt .json .log) -> importText */
+async function importFiles(files) {
+  let total = 0; const names = [];
+  for (const f of files) {
+    if (f.size > 5 * 1024 * 1024) { toast(`${f.name} terlalu besar (maks. 5 MB).`); continue; }
+    let text;
+    try { text = await f.text(); } catch { toast(`Gagal membaca ${f.name}.`); continue; }
+    const n = importText(text, { label: 'File ' + f.name });
+    if (n) { total += n; names.push(f.name); }
+  }
+  const msg = total ? `${total} pembacaan dari ${names.join(', ')} masuk ke dashboard.` : NO_DATA_MSG;
+  toast(msg);
+  const out = $('#pasteResult'); if (out) out.textContent = msg;
+  return total;
+}
+$('#btnPickFile').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', async e => { await importFiles([...e.target.files]); e.target.value = ''; });
+document.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+document.addEventListener('drop', e => { if (e.dataTransfer?.files?.length) { e.preventDefault(); importFiles([...e.dataTransfer.files]); } });
 
 $('#pasteGo').addEventListener('click', () => {
   const n = importText($('#pasteArea').value);

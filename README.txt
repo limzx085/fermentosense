@@ -10,6 +10,9 @@ CARA MEMASUKKAN DATA SENSOR
 Tinkercad/Wokwi berjalan di cloud, jadi datanya tidak mengalir otomatis ke website.
 1. Jalankan simulasi, buka Serial Monitor, lalu salin teksnya.
 2. Di dashboard, klik tombol "Tempel Data" atau tekan Ctrl+V.
+   Data dari kode Google Colab: tempel teks CSV/JSON-nya, atau unggah/seret file .csv/.json
+   ke halaman dashboard. Judul kolom yang dikenali: waktu, suhu_media, suhu_ruangan,
+   kelembapan, pH (lihat halaman Bantuan untuk contoh kode Colab).
    (Pilihan lain: tombol "Sumber Data" -> Simulator / Tempel Serial Monitor / USB Serial.)
 3. Untuk mencoba tanpa perangkat: Pengaturan -> "Muat Data Contoh".
 

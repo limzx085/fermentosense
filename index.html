@@ -32,6 +32,7 @@
     <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
     <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
     <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></symbol>
   </defs>
@@ -87,7 +88,7 @@
       <div class="top-cards">
         <button type="button" class="pill-card paste-card" id="btnQuickPaste" title="Salin teks Serial Monitor (Tinkercad/Wokwi), lalu klik ini atau tekan Ctrl+V">
           <svg class="ic"><use href="#i-clipboard"/></svg>
-          <span class="pc-text"><b>Tempel Data</b><small>dari Serial Monitor · Ctrl+V</small></span>
+          <span class="pc-text"><b>Tempel Data</b><small>Serial / Colab · Ctrl+V · seret file</small></span>
         </button>
 
         <button type="button" class="pill-card source-card" id="sourcePill" title="Pilih sumber data sensor">
@@ -382,6 +383,45 @@ DHT22 Humidity: 50.5 %	DHT22 Temperature: 23.1 ºC
       </section>
 
       <section class="card help">
+        <h3>Data dari Google Colab atau file CSV</h3>
+        <p>Colab tidak bisa mengirim data langsung ke dashboard, tetapi hasilnya bisa dibawa dengan dua cara: <b>tempel</b> teks CSV (tombol Tempel Data / Ctrl+V) atau <b>unggah / seret</b> file <code>.csv</code>, <code>.txt</code>, <code>.json</code> ke halaman ini. File CSV hasil “Unduh Laporan” dari dashboard ini juga bisa diunggah kembali.</p>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>Isi</th><th>Judul kolom yang dikenali (huruf besar/kecil bebas)</th></tr></thead>
+            <tbody>
+              <tr><td>Waktu (opsional)</td><td><code>waktu</code>, <code>timestamp</code>, <code>time</code>, <code>datetime</code> — contoh <code>2025-01-20 08:00:00</code> atau epoch detik. Atau <code>jam_ke</code> / <code>jam</code> (jam sejak mulai batch)</td></tr>
+              <tr><td>Suhu media</td><td><code>suhu_media</code>, <code>suhu_media_C</code>, <code>temp</code>, <code>suhu</code></td></tr>
+              <tr><td>Suhu ruangan</td><td><code>suhu_ruangan</code>, <code>suhu_ruangan_C</code>, <code>suhu_udara</code>, <code>room</code></td></tr>
+              <tr><td>Kelembapan</td><td><code>kelembapan</code>, <code>kelembapan_persen</code>, <code>humidity</code>, <code>rh</code></td></tr>
+              <tr><td>pH</td><td><code>ph</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Pemisah kolom boleh koma, titik koma, atau tab. Kolom lain (mis. status) diabaikan. Jika ada kolom waktu, data dianggap historis: grafik dan riwayat mengikuti waktunya, dan waktu mulai batch disesuaikan bila data lebih awal.</p>
+        <pre class="code small">import pandas as pd
+import numpy as np
+
+# contoh: 24 jam data, satu baris tiap 15 menit
+n = 24 * 4
+i = np.arange(n)
+df = pd.DataFrame({
+    "waktu": pd.date_range("2025-01-20 08:00", periods=n, freq="15min"),
+    "suhu_media_C": np.round(27 + 6 * (1 - np.exp(-i / 16)), 2),
+    "suhu_ruangan_C": np.round(26 + np.random.rand(n), 2),
+    "kelembapan_persen": np.round(65 + 12 * (1 - np.exp(-i / 12)), 1),
+    "pH": np.round(6.4 - 0.5 * (1 - np.exp(-i / 24)), 2),
+})
+
+# Cara 1: cetak, salin hasilnya, lalu tempel ke dashboard (Ctrl+V)
+print(df.to_csv(index=False))
+
+# Cara 2: simpan jadi file lalu unggah / seret file itu ke dashboard
+df.to_csv("data_fermentasi.csv", index=False)
+from google.colab import files
+files.download("data_fermentasi.csv")</pre>
+      </section>
+
+      <section class="card help">
         <h3>Langkah cepat di Tinkercad</h3>
         <ol class="steps">
           <li>Rakit rangkaian sesuai tabel, tempel kode di atas (mode <i>Text</i>), lalu klik <b>Start Simulation</b>.</li>
@@ -403,7 +443,7 @@ DHT22 Humidity: 50.5 %	DHT22 Temperature: 23.1 ºC
   </div>
   <div class="tabs" role="tablist">
     <button type="button" class="tab active" data-tab="sim">Simulator</button>
-    <button type="button" class="tab" data-tab="paste">Tempel Serial Monitor</button>
+    <button type="button" class="tab" data-tab="paste">Tempel / Upload</button>
     <button type="button" class="tab" data-tab="usb">USB Serial</button>
   </div>
 
@@ -432,13 +472,18 @@ DHT22 Humidity: 50.5 %	DHT22 Temperature: 23.1 ºC
   </div>
 
   <div class="tab-body" id="tab-paste" hidden>
-    <p class="muted">Salin teks dari <b>Serial Monitor Tinkercad</b> lalu tempel di bawah. Tiap baris diproses menjadi satu pembacaan.</p>
+    <p class="muted">Tempel teks dari <b>Serial Monitor Tinkercad/Wokwi</b> atau hasil <b>kode Google Colab</b> (CSV / JSON berjudul kolom), atau unggah filenya di bawah.</p>
     <textarea id="pasteArea" rows="7" spellcheck="false" placeholder="T=31.2;A=29.0;H=74.0;PH=5.70&#10;T=31.4;A=29.0;H=73.0;PH=5.68"></textarea>
     <div class="paste-opts">
-      <label>Jarak waktu antar baris (detik)<input type="number" id="pasteGap" min="1" value="1"></label>
+      <label>Jarak antar baris bila tanpa kolom waktu (detik)<input type="number" id="pasteGap" min="1" value="1"></label>
       <button type="button" class="btn primary" id="pasteGo">Proses Data</button>
     </div>
     <p class="muted" id="pasteResult"></p>
+    <div class="filebox">
+      <button type="button" class="btn" id="btnPickFile"><svg class="ic"><use href="#i-upload"/></svg> Pilih File…</button>
+      <small>.csv · .txt · .json · .log (maks. 5 MB). Bisa juga <b>seret file</b> ke halaman ini. Jika ada kolom waktu, data dimasukkan sesuai waktunya.</small>
+      <input type="file" id="fileInput" accept=".csv,.tsv,.txt,.json,.log,text/*,application/json" multiple hidden>
+    </div>
   </div>
 
   <div class="tab-body" id="tab-usb" hidden>
