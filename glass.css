@@ -1,0 +1,103 @@
+/* =====================================================================
+   FermentoSense – gaya "glassy" (terinspirasi glassy-dashboard dari 21st.dev)
+   Lapisan kaca di atas style.css + fx.css. Hapus <link> glass.css di index.html untuk kembali ke tampilan datar.
+   ===================================================================== */
+:root{
+  --glass:rgba(255,253,248,.52);
+  --glass-strong:rgba(255,253,248,.78);
+  --gloss:linear-gradient(144deg,rgba(255,255,255,.45),rgba(255,255,255,0) 62%);
+  --rim:rgba(255,255,255,.62);
+  --edge-light:rgba(255,255,255,.85);
+  --edge-shade:rgba(30,60,35,.14);
+  --glass-shadow:0 8px 24px rgba(27,60,32,.10);
+  --frost:blur(16px) saturate(1.35);
+  --scene:
+    radial-gradient(60vw 50vh at 8% 12%, rgba(76,175,80,.38), transparent 70%),
+    radial-gradient(45vw 45vh at 92% 8%, rgba(227,154,45,.30), transparent 70%),
+    radial-gradient(55vw 55vh at 85% 92%, rgba(46,125,50,.30), transparent 70%),
+    radial-gradient(45vw 40vh at 25% 95%, rgba(199,229,200,.9), transparent 70%),
+    linear-gradient(160deg,#eef3e6,#f8f1e4 55%,#e9f1e2);
+}
+:root[data-theme="dark"]{
+  --glass:rgba(45,58,46,.50);
+  --glass-strong:rgba(45,58,46,.82);
+  --gloss:linear-gradient(144deg,rgba(255,255,255,.10),rgba(255,255,255,0) 62%);
+  --rim:rgba(240,235,229,.16);
+  --edge-light:rgba(240,235,229,.22);
+  --edge-shade:rgba(0,0,0,.35);
+  --glass-shadow:0 10px 30px rgba(0,0,0,.35);
+  --scene:
+    radial-gradient(60vw 50vh at 8% 12%, rgba(76,175,80,.30), transparent 70%),
+    radial-gradient(45vw 45vh at 92% 8%, rgba(227,154,45,.20), transparent 70%),
+    radial-gradient(55vw 55vh at 85% 92%, rgba(56,142,60,.28), transparent 70%),
+    radial-gradient(45vw 40vh at 25% 95%, rgba(27,94,32,.45), transparent 70%),
+    linear-gradient(160deg,#0f1a11,#1c2a1f 55%,#13201a);
+}
+
+body{background:var(--scene) fixed;background-color:var(--bg)}
+.app{gap:18px;padding:18px}
+
+/* bilah kaca bersama */
+.sidebar,.topbar,.card,.pill-card,.scard,dialog{
+  border:1px solid var(--rim);
+  box-shadow:inset 1px 1px 1px var(--edge-light),inset -1px -1px 1px var(--edge-shade),var(--glass-shadow);
+  -webkit-backdrop-filter:var(--frost);backdrop-filter:var(--frost);
+}
+
+/* sidebar melayang */
+.sidebar{top:18px;height:calc(100vh - 36px);border-radius:30px;background:var(--gloss),var(--glass)}
+.nav-item{border-radius:999px}
+.nav-item.active{box-shadow:0 4px 12px rgba(46,125,50,.35)}
+.theme-btn{border-style:solid;border-color:var(--rim)}
+
+/* topbar jadi pil kaca */
+.main{padding:0 4px 28px}
+.topbar{border-radius:28px;padding:12px 14px 12px 22px;background:var(--gloss),var(--glass);align-items:center}
+.pill-card{border-radius:999px;background-color:var(--glass-strong);background-image:var(--gloss)}
+.paste-card{background-color:var(--t-secondary);border-color:rgba(255,255,255,.5)}
+.paste-card:hover{background-color:var(--secondary-hover)}
+
+/* kartu kaca */
+.card{border-radius:22px;background-color:var(--glass);background-image:var(--gloss)}
+.scard{border-radius:22px;background-image:var(--gloss)}
+.scard.temp{background-color:color-mix(in srgb,var(--temp-bg) 62%,transparent)}
+.scard.hum{background-color:color-mix(in srgb,var(--hum-bg) 62%,transparent)}
+.scard.ph{background-color:color-mix(in srgb,var(--ph-bg) 62%,transparent)}
+.scard.warn{background-color:color-mix(in srgb,var(--red-bg) 72%,transparent);border-color:var(--red-line)}
+.scard{border-width:1px}
+
+/* spotlight dari fx.css digabung dengan kilap kaca */
+.fx-spot{background-image:
+  radial-gradient(420px circle at var(--mx) var(--my),rgba(var(--spot-rgb),calc(var(--spot-a) * var(--spot))),transparent 55%),
+  var(--gloss)}
+
+/* isi dalam kartu sedikit transparan */
+.status-box{background:color-mix(in srgb,var(--ok-bg) 70%,transparent)}
+.status-box.warn{background:color-mix(in srgb,var(--red-bg) 75%,transparent)}
+.status-box.idle{background:color-mix(in srgb,var(--t-muted) 65%,transparent)}
+.notif.ok{background:color-mix(in srgb,var(--ok-bg) 70%,transparent)}
+.notif.warn{background:color-mix(in srgb,var(--red-bg) 75%,transparent)}
+.status-box,.notif{border-radius:16px}
+.flow li,.filebox{background:color-mix(in srgb,var(--t-muted) 55%,transparent);border-radius:16px}
+.tbl th{background:var(--glass-strong)}
+.btn,.chip-btn,.select-wrap select,input[type=text],input[type=number],input[type=datetime-local],select,textarea{
+  background-color:color-mix(in srgb,var(--input-bg) 70%,transparent)}
+.btn{border-radius:999px}
+.btn-report{border-radius:22px;background-color:var(--glass)}
+.model-card iframe{border-radius:16px}
+pre.code{border-radius:16px}
+
+/* modal kaca */
+dialog{border-radius:24px;background:color-mix(in srgb,var(--popover) 82%,transparent)}
+dialog::backdrop{-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+
+@media (max-width:1000px){
+  .app{padding:10px;gap:12px}
+  .sidebar{position:sticky;top:10px;z-index:5;height:auto;border-radius:999px}
+}
+@media (max-width:640px){
+  .pill-card{border-radius:20px}
+}
+@media (prefers-reduced-transparency:reduce){
+  .sidebar,.topbar,.card,.pill-card,.scard,dialog{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:var(--card)}
+}

@@ -1,0 +1,40 @@
+/* =====================================================================
+   FermentoSense – efek animasi (Lenis + GSAP + efek gaya React Bits)
+   Dimuat setelah style.css dan vendor/lenis.css.
+   ===================================================================== */
+
+/* Lenis mematikan klik pada semua iframe saat smooth scroll aktif.
+   Model 3D harus tetap bisa diputar, jadi iframe-nya dikecualikan. */
+.lenis.lenis-smooth #modelFrame{pointer-events:auto}
+
+/* ---- Spotlight card (terinspirasi React Bits "SpotlightCard") ----
+   Cahaya lembut mengikuti kursor; --mx/--my diisi oleh fx.js. */
+.fx-spot{--mx:50%;--my:50%;--spot:0}
+.fx-spot{
+  background-image:radial-gradient(420px circle at var(--mx) var(--my),
+    rgba(var(--spot-rgb),calc(var(--spot-a) * var(--spot))), transparent 55%);
+  transition:--spot .3s;
+}
+.fx-spot:hover{--spot:1}
+.scard.fx-spot{transition:background-color .2s,border-color .2s,transform .25s,box-shadow .25s}
+.scard.fx-spot:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.12)}
+@property --spot{syntax:"<number>";inherits:true;initial-value:0}
+
+/* ---- Shiny text (terinspirasi React Bits "ShinyText") ---- */
+.fx-shiny{
+  background:linear-gradient(110deg,currentColor 40%,#E39A2D 50%,currentColor 60%) 0 0/250% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:fx-shine 5s linear infinite;
+}
+@keyframes fx-shine{from{background-position:100% 0}to{background-position:-150% 0}}
+
+/* Nilai sensor berdenyut singkat saat berubah */
+.sval.fx-bump{animation:fx-bump .45s ease}
+@keyframes fx-bump{30%{transform:scale(1.06)}}
+.sval{transform-origin:left center}
+
+@media (prefers-reduced-motion: reduce){
+  .fx-shiny{animation:none;-webkit-text-fill-color:currentColor;background:none}
+  .sval.fx-bump{animation:none}
+  .scard.fx-spot:hover{transform:none}
+}

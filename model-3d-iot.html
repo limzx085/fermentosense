@@ -44,15 +44,56 @@
   ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
   li{display:flex;align-items:center;gap:10px}
   li i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.25);flex:none}
+
+  /* ---------- interaksi & simulasi ---------- */
+  .hl{filter:brightness(1.22) saturate(1.15)}
+  .stage.can-click{cursor:pointer}
+  #hots{position:absolute;inset:0;pointer-events:none}
+  .hs{position:absolute;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;padding:0;border-radius:50%;
+    border:2px solid #fff;background:var(--amber);box-shadow:0 0 0 0 rgba(227,154,45,.7),0 2px 6px rgba(0,0,0,.25);
+    cursor:pointer;pointer-events:auto;animation:hs-pulse 2s infinite;transition:opacity .2s}
+  .hs::after{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}
+  .hs.behind{opacity:.35}
+  .hs.alarm{background:#d33a32;animation:hs-alarm .6s infinite}
+  .hs.sel{background:var(--green)}
+  .hs-tip{position:absolute;left:0;top:0;pointer-events:none;background:#14181C;color:#fff;font-size:12px;font-weight:600;
+    padding:5px 9px;border-radius:7px;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:3}
+  .hs-tip.show{opacity:1}
+  @keyframes hs-pulse{70%{box-shadow:0 0 0 10px rgba(227,154,45,0),0 2px 6px rgba(0,0,0,.25)}100%{box-shadow:0 0 0 0 rgba(227,154,45,0),0 2px 6px rgba(0,0,0,.25)}}
+  @keyframes hs-alarm{50%{box-shadow:0 0 0 12px rgba(211,58,50,0),0 2px 6px rgba(0,0,0,.25);transform:scale(1.15)}}
+  .simbox{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:14px;background:#F7F3E4;border:1px solid var(--line)}
+  .simstat{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700;background:#fff;border:1px solid var(--line)}
+  .tag i{width:8px;height:8px;border-radius:50%;background:#9aa49c}
+  .tag.on i{background:#2fb35a}.tag.bad{background:#fdeceb;border-color:#f4c3bf;color:#8d1d17}.tag.bad i{background:#d33a32}
+  .reads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .rd{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .rd small{display:block;font-size:11.5px;color:var(--muted)}
+  .rd b{font-size:20px;font-variant-numeric:tabular-nums}
+  .rd.bad{background:#fdeceb;border-color:#f4c3bf;color:#8d1d17}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .row output{font-weight:700;font-size:13px}
+  .info{background:#fff;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5}
+  .info b{display:block;font-size:14px;margin-bottom:2px}
+  .log{gap:4px;font-size:12.5px;max-height:132px;overflow:auto}
+  .log li{display:block;color:var(--muted)}
+  .log li b{color:var(--ink);font-variant-numeric:tabular-nums;margin-right:6px}
+  .log li.bad{color:#8d1d17}
+  .bar{height:6px;border-radius:999px;background:#E6DCC2;overflow:hidden}
+  .bar span{display:block;height:100%;background:var(--green);transition:width .3s}
+  @media (prefers-reduced-motion:reduce){.hs,.hs.alarm{animation:none}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="stage" id="stage" role="img" aria-label="Model 3D kasar inkubator tempe FermentoSense dengan logo dan palet warna sendiri. Seret untuk memutar.">
+  <div class="stage" id="stage" role="group" aria-label="Model 3D interaktif inkubator tempe FermentoSense. Seret untuk memutar, klik titik oranye atau bagian model untuk berinteraksi.">
     <div id="scene"></div>
     <svg id="lines" aria-hidden="true"></svg>
     <div id="pills"></div>
-    <div class="hud tl">Seret untuk memutar</div>
+    <div id="hots"></div>
+    <div class="hs-tip" id="hsTip" aria-hidden="true"></div>
+    <div class="hud tl">Seret untuk memutar · klik titik oranye / bagian model untuk berinteraksi</div>
     <div class="hud bl" id="readout"></div>
   </div>
 
@@ -64,6 +105,32 @@
         <p class="sub">Model 3D kasar inkubator tempe dengan logo dan palet warna sendiri.</p>
       </div>
     </div>
+
+    <section class="simbox" aria-label="Simulasi perangkat">
+      <span class="lbl" style="margin:0">Simulasi perangkat</span>
+      <div class="simstat" id="simStat"></div>
+      <div>
+        <div class="row"><small class="sub" style="margin:0">Fermentasi <b id="simJam">jam ke-0</b> · <span id="simFase">–</span></small><small class="sub" style="margin:0" id="simPct">0%</small></div>
+        <div class="bar"><span id="simBar" style="width:0"></span></div>
+      </div>
+      <div class="reads" id="reads"></div>
+      <div class="grid g2" id="simBtns"></div>
+      <button type="button" class="btn" id="simLink" hidden style="width:100%"></button>
+      <div>
+        <div class="row"><label class="lbl" for="amb" style="margin:0">Suhu ruangan luar</label><output id="ambOut" for="amb">27,0 °C</output></div>
+        <input id="amb" type="range" min="18" max="40" step="0.5" value="27">
+      </div>
+      <div>
+        <span class="lbl">Kecepatan waktu</span>
+        <div class="grid g4" id="speeds"></div>
+        <button type="button" class="btn" id="simReset" style="width:100%">Ulangi dari jam ke-0</button>
+      </div>
+      <div class="info" id="info" aria-live="polite"><b>Coba klik model</b>Tekan tombol <b style="display:inline">MODE</b>/<b style="display:inline">OK</b> di kotak ESP32, buka tutup, nyalakan lampu pemanas, atau klik sensor untuk melihat bacaannya.</div>
+      <div>
+        <span class="lbl">Log perangkat</span>
+        <ul class="log" id="log"></ul>
+      </div>
+    </section>
 
     <div>
       <span class="lbl">Sudut pandang</span>
@@ -111,7 +178,17 @@
   var D2R = Math.PI / 180;
   var PERSP = 1800;
   var SX = -97.5, SY = 20;
-  var state = { rx: -14, ry: 24, zoom: 1, wire: false, explode: false, auto: false, glass: true, labels: true, dragging: false };
+  var state = { rx: -14, ry: 24, zoom: 1, wire: false, explode: false, auto: false, glass: true, labels: true, hots: true, dragging: false };
+
+  // ---------- status simulasi perangkat ----------
+  // waktu simulasi dalam jam fermentasi; suhu °C; rh %; heater: 'auto' | 'on' | 'off'
+  var TH = { tempMax: 38, airMax: 38, humMin: 70, humMax: 90, phMax: 7.5, heatLo: 29, heatHi: 31 };
+  var sim = {
+    power: true, t: 0, speed: 600, amb: 27,
+    tMedia: 27, tAir: 27, rh: 72, ph: 6.4,
+    heater: 'auto', heatOn: false, page: 0, silenced: false, sound: true,
+    pressed: {}, blink: false, uptime: 0, alarmWas: false, warnWas: {}
+  };
 
   // ---------- palet logo ----------
   var GREEN = '#164A2B', CREAM = '#F4ECD9', AMBER = '#E39A2D', INK = '#14181C', LCDG = '#0F3320';
@@ -142,6 +219,7 @@
   // ---------- pembuat bentuk ----------
   var FACES = [];
   var NAMES = ['front', 'back', 'right', 'left', 'top', 'bottom'];
+  var CUR_PART = '';   // bagian interaktif yang sedang dibangun (tombol, sensor, tutup, …)
 
   function addFace(g, pos, nodeOps, fops, dist, w, h, c, o, extra) {
     extra = extra || {};
@@ -151,7 +229,8 @@
       w: w, h: h, c: c, k: bright(n), n: n,
       alpha: o.alpha || 0, emit: !!o.emit, glass: !!o.glass,
       clip: extra.clip || '', label: extra.label || '', html: extra.html || '',
-      two: !!extra.two, deco: !!extra.deco, lc: o.lc || '#1B2A21', ls: o.ls || 12, el: null
+      two: !!extra.two, deco: !!extra.deco, lc: o.lc || '#1B2A21', ls: o.ls || 12, el: null,
+      part: CUR_PART
     });
   }
 
@@ -239,7 +318,9 @@
     // alas + atap
     box('fix', 0, 98, 0, 320, 44, 200, FRAME);
     box('fix', 230, 98, 0, 140, 44, 200, FRAME);
+    CUR_PART = 'lid';
     box('lid', 0, -117, 0, 316, 6, 196, LID);
+    CUR_PART = '';
     box('fix', 230, -117, 0, 140, 6, 196, LID);
 
     // tiang + rel
@@ -256,6 +337,7 @@
     [-135, 135, 290].forEach(function (fx) { [-85, 85].forEach(function (fz) { box('fix', fx, 124, fz, 22, 8, 22, GREEN); }); });
 
     // handle + kenop (ikut terangkat)
+    CUR_PART = 'lid';
     box('lid', -70, -134, 0, 12, 28, 14, GREEN);
     box('lid', 70, -134, 0, 12, 28, 14, GREEN);
     box('lid', 0, -152, 0, 152, 12, 16, GREEN);
@@ -265,6 +347,7 @@
     quad('lid', 0, -120.4, 56, 74, 66, [['x', 90]], '#000', {}, { html: iconSVG(), deco: true });
 
     // dinding dalam
+    CUR_PART = '';
     box('fix', 0, -19, -92.5, 300, 190, 3, WALL_B);
     box('fix', 155, -19, 0, 4, 190, 180, WALL_R);
     box('fix', 225, -19, -92.5, 130, 190, 3, WALL_C);
@@ -274,16 +357,19 @@
     quad('fix', 0, -15, 95, 300, 182, [], '#DCE8D8', { alpha: 0.12, glass: true }, { two: true });
     quad('fix', -155, -15, 0, 180, 182, [['y', 90]], '#DCE8D8', { alpha: 0.12, glass: true }, { two: true });
 
-    // lampu atap (ikut terangkat)
+    // lampu atap = lampu pemanas (ikut terangkat)
+    CUR_PART = 'lamp';
     box('lid', 55, -103.5, 5, 125, 5, 14, '#FFF1C9', { emit: true });
 
     // DHT22 menggantung (oranye)
+    CUR_PART = 'dht';
     rod('lid', [-70, -106, 30], [-70, -90, 30], 4, GREEN, { n: 8 });
     box('lid', -70, -70, 30, 34, 44, 18, AMBER);
     box('lid', -70, -44, 30, 12, 6, 14, AMBER);
     quad('lid', -70, -68, 39.2, 28, 34, [], AMBER, {}, { html: grilleSVG(), deco: true });
 
     // rak + penyangga
+    CUR_PART = '';
     box('fix', 0, -6, -20, 296, 3, 150, WALL_S);
     [-40, 40].forEach(function (bz) { box('fix', -150, -2, bz, 6, 10, 14, '#9C8F6B'); box('fix', 150, -2, bz, 6, 10, 14, '#9C8F6B'); });
 
@@ -297,18 +383,21 @@
         quad('fix', dx, ty - 9.65, dz, 7 + rnd(seed + k) * 5, 5 + rnd(seed + k + 9) * 3, [['x', 90]], '#C99A3E', {}, { deco: true });
       }
     }
+    CUR_PART = 'tray';
     tray(-80, -20, -7.5, 1);
     tray(80, -20, -7.5, 40);
     tray(-80, -20, 76, 80);
     tray(50, -20, 76, 120);
 
     // DS18B20
+    CUR_PART = 'ds';
     var dsB = [-8, 74, 62], dsT = [12, 0, 58];
     rod('fix', dsB, lerp3(dsB, dsT, 0.88), 3.6, '#CFC7B2', { n: 10 });
     rod('fix', lerp3(dsB, dsT, 0.88), dsT, 4.4, GREEN, { n: 10 });
     cable('fix', [dsT, [15, -16, 59], [26, -32, 57], [48, -40, 52], [100, -42, 40], [155, -34, 35]], 1.8, INK, 6);
 
     // gelas + sensor pH
+    CUR_PART = 'ph';
     rod('fix', [105, 76, 65], [105, 30, 65], 20, '#E4EEE6', { alpha: 0.24, n: 14 });
     rod('fix', [105, 76, 65], [105, 48, 65], 17.5, '#A9D3C0', { alpha: 0.4, n: 14 });
     var phT = [112, 0, 60], phB = [102, 62, 68];
@@ -318,18 +407,30 @@
     cable('fix', [phT, [113, -14, 60], [120, -30, 58], [136, -38, 56], [155, -40, 55]], 2, INK, 6);
 
     // kotak kontrol ESP32
+    CUR_PART = 'esp';
     box('fix', 232, -18, 68, 120, 146, 60, '#F0E6CC');
     quad('fix', 232, -72, 98.4, 100, 26.5, [], '#000', {}, { html: logoSVG(), deco: true });
+    CUR_PART = 'lcd';
     box('fix', 232, -24, 99.5, 66, 44, 3, AMBER);
     box('fix', 232, -24, 101.5, 58, 36, 1, LCDG, {
       label: 'T Udara : 32.0 °C\nT Media : 36.5 °C\nRH      : 85 %\npH      : 6.2', labelFace: 'front', lc: CREAM, ls: 5.2
     });
-    [[202, AMBER], [244, CREAM]].forEach(function (b) {
+    // tombol MODE (oranye) & OK (krem) – bagian yang ditekan masuk saat diklik
+    [[202, AMBER, 'btnA'], [244, CREAM, 'btnB']].forEach(function (b) {
+      CUR_PART = 'esp';
       rod('fix', [b[0], 15, 98], [b[0], 15, 100.5], 11.5, GREEN, { n: 14 });
+      CUR_PART = b[2];
       rod('fix', [b[0], 15, 100.5], [b[0], 15, 106], 9, b[1], { n: 14 });
     });
+    // LED status
+    CUR_PART = 'led';
     rod('fix', [224, 38, 98], [224, 38, 99.8], 10, GREEN, { n: 14 });
     rod('fix', [224, 38, 99.8], [224, 38, 100.5], 6, '#2E6B45', { n: 12 });
+    // buzzer piezo
+    CUR_PART = 'buzzer';
+    rod('fix', [262, 38, 98], [262, 38, 101.5], 8, '#1E1E1E', { n: 14 });
+    rod('fix', [262, 38, 101.5], [262, 38, 102], 2.2, '#5A5A5A', { n: 8 });
+    CUR_PART = 'esp';
     [[180, -84], [284, -84], [180, 48], [284, 48]].forEach(function (s) { rod('fix', [s[0], s[1], 98], [s[0], s[1], 99.8], 2.2, '#A59A7E', { n: 8 }); });
     // antena
     rod('fix', [213, -91, 60], [213, -104, 60], 6.5, GREEN, { n: 10 });
@@ -337,6 +438,7 @@
     rod('fix', [213, -130, 60], [213, -168, 60], 2.8, GREEN, { n: 8 });
 
     // kabel dari kotak kontrol ke alas
+    CUR_PART = '';
     [198, 226, 256].forEach(function (cx) {
       cable('fix', [[cx, 55, 90], [cx, 66, 92], [cx + 4, 74, 97], [cx + 4, 86, 102]], 3.2, INK, 6);
     });
@@ -345,11 +447,13 @@
       cable('fix', [[186 + dx, 55, 88 + dz], [184 + dx, 66, 92 + dz], [176 + dx, 76, 97 + dz], [168 + dx, 90, 102 + dz]], 1.6, cc[0], 5);
     });
 
-    // power supply
+    // power supply (klik = saklar daya)
+    CUR_PART = 'psu';
     box('fix', 330, 116, 60, 62, 24, 40, GREEN);
     cable('fix', [[299, 116, 58], [286, 122, 80], [270, 118, 104], [258, 92, 105]], 2.6, INK, 6);
 
     // logo + tulisan di sisi depan alas
+    CUR_PART = '';
     quad('fix', 0, 98, 100.4, 150, 40, [], '#000', {}, { html: logoSVG(), deco: true });
   }
   buildModel();
@@ -360,15 +464,16 @@
     var el = document.createElement('div');
     if (f.html) el.innerHTML = f.html;
     else if (f.label) el.textContent = f.label;
+    if (f.part) el.dataset.part = f.part;
     scene.appendChild(el);
     f.el = el;
   });
   ['shadow', 'grid'].forEach(function (id) { var e = document.createElement('div'); e.id = id; scene.insertBefore(e, scene.firstChild); });
   (function () {
     var sh = document.getElementById('shadow'), gr = document.getElementById('grid');
-    sh.style.cssText = 'position:absolute;left:50%;top:50%;width:760px;height:380px;margin-left:-380px;margin-top:-190px;'
+    sh.style.cssText = 'pointer-events:none;position:absolute;left:50%;top:50%;width:760px;height:380px;margin-left:-380px;margin-top:-190px;'
       + 'background:radial-gradient(ellipse at center,rgba(22,42,28,.32) 0%,rgba(22,42,28,0) 68%);transform:translate3d(0,' + (128.8 + SY).toFixed(1) + 'px,0) rotateX(90deg);';
-    gr.style.cssText = 'position:absolute;left:50%;top:50%;width:1000px;height:600px;margin-left:-500px;margin-top:-300px;'
+    gr.style.cssText = 'pointer-events:none;position:absolute;left:50%;top:50%;width:1000px;height:600px;margin-left:-500px;margin-top:-300px;'
       + 'background-image:linear-gradient(rgba(22,74,43,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(22,74,43,.14) 1px,transparent 1px);background-size:25px 25px;'
       + '-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 70%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 70%);'
       + 'transform:translate3d(0,' + (129.8 + SY).toFixed(1) + 'px,0) rotateX(90deg);';
@@ -377,31 +482,55 @@
 
   function groupLift(g) { return g === 'lid' && state.explode ? -115 : 0; }
 
-  function applyFaces() {
-    FACES.forEach(function (f) {
-      var c = rgb(f.c);
-      var tf = 'translate3d(' + (f.x + SX) + 'px,' + (f.y + SY + groupLift(f.g)) + 'px,' + f.z + 'px) ' + f.nops + ' ' + f.fops + ' translateZ(' + f.dist + 'px)';
-      var st = 'position:absolute;left:50%;top:50%;box-sizing:border-box;width:' + f.w + 'px;height:' + f.h + 'px;'
-        + 'margin-left:' + (-f.w / 2) + 'px;margin-top:' + (-f.h / 2) + 'px;transform:' + tf + ';'
-        + 'transition:transform .6s cubic-bezier(.2,.7,.2,1);';
-      var hidden = (f.glass && !state.glass) || (f.deco && state.wire);
-      if (hidden) st += 'display:none;';
-      if (f.html) {
-        st += 'backface-visibility:hidden;';
-      } else if (state.wire) {
-        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.05);border:0.6px solid ' + shade(f.c, 0.55) + ';backface-visibility:visible;';
-      } else if (f.alpha) {
-        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + f.alpha + ');border:0.5px solid rgba(255,255,255,.6);backface-visibility:visible;';
-      } else if (f.emit) {
-        st += 'background:' + f.c + ';backface-visibility:hidden;' + (f.n[1] > 0.5 ? 'box-shadow:0 0 14px 6px rgba(255,214,120,.55);' : '');
-      } else {
-        st += 'background:' + shade(f.c, f.k) + ';backface-visibility:' + (f.two ? 'visible' : 'hidden') + ';';
-      }
-      if (f.clip) st += 'clip-path:' + f.clip + ';-webkit-clip-path:' + f.clip + ';';
-      if (f.label) st += 'display:flex;align-items:center;padding:0 3px;white-space:pre;text-align:left;font:500 ' + f.ls + 'px/' + (f.ls * 1.6).toFixed(1) + 'px ui-monospace,Menlo,Consolas,monospace;color:' + f.lc + ';';
-      f.el.style.cssText = st;
-    });
+  // warna/nyala yang bergantung pada status simulasi
+  function liveLook(f) {
+    var c = f.c, glow = '';
+    if (f.part === 'led') {
+      c = !sim.power ? '#23402E' : (alarmActive() && sim.blink) ? '#FF4A3D' : alarmActive() ? '#7A1F1A' : '#3DDC6A';
+      if (sim.power && (!alarmActive() || sim.blink)) glow = 'box-shadow:0 0 8px 3px ' + c + ';';
+    } else if (f.part === 'lamp') {
+      var on = sim.power && sim.heatOn;
+      c = on ? '#FFF1C9' : '#D9D1BC';
+      return { c: c, emit: on, glow: '' };
+    } else if (f.part === 'lcd' && f.c === LCDG) {
+      c = sim.power ? '#1A5632' : '#0B1A10';
+    } else if (f.part === 'buzzer' && buzzing() && sim.blink) {
+      c = '#5A1A16';
+    }
+    return { c: c, emit: f.emit, glow: glow };
   }
+  // pergeseran bagian (tombol masuk saat ditekan)
+  function partOffset(f) { return f.part && sim.pressed[f.part] ? -3 : 0; }
+
+  function styleFace(f) {
+    var look = liveLook(f), col = look.c;
+    var c = rgb(col);
+    var tf = 'translate3d(' + (f.x + SX) + 'px,' + (f.y + SY + groupLift(f.g)) + 'px,' + (f.z + partOffset(f)) + 'px) ' + f.nops + ' ' + f.fops + ' translateZ(' + f.dist + 'px)';
+    var fast = f.part === 'btnA' || f.part === 'btnB';
+    var st = 'position:absolute;left:50%;top:50%;box-sizing:border-box;width:' + f.w + 'px;height:' + f.h + 'px;'
+      + 'margin-left:' + (-f.w / 2) + 'px;margin-top:' + (-f.h / 2) + 'px;transform:' + tf + ';'
+      + 'transition:transform ' + (fast ? '.09s ease-out' : '.6s cubic-bezier(.2,.7,.2,1)') + ',background-color .25s;';
+    var hidden = (f.glass && !state.glass) || (f.deco && state.wire);
+    if (hidden) st += 'display:none;';
+    // kaca & bintik tempe tidak menghalangi klik ke bagian di belakangnya
+    if (f.glass || (f.deco && f.part === 'tray')) st += 'pointer-events:none;';
+    if (f.html) {
+      st += 'backface-visibility:hidden;';
+    } else if (state.wire) {
+      st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.05);border:0.6px solid ' + shade(col, 0.55) + ';backface-visibility:visible;';
+    } else if (f.alpha) {
+      st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + f.alpha + ');border:0.5px solid rgba(255,255,255,.6);backface-visibility:visible;';
+    } else if (look.emit) {
+      st += 'background:' + col + ';backface-visibility:hidden;' + (f.n[1] > 0.5 ? 'box-shadow:0 0 14px 6px rgba(255,214,120,.55);' : '');
+    } else {
+      st += 'background:' + shade(col, f.k) + ';backface-visibility:' + (f.two ? 'visible' : 'hidden') + ';' + look.glow;
+    }
+    if (f.clip) st += 'clip-path:' + f.clip + ';-webkit-clip-path:' + f.clip + ';';
+    if (f.label) st += 'display:flex;align-items:center;padding:0 3px;white-space:pre;text-align:left;font:600 ' + f.ls + 'px/' + (f.ls * 1.6).toFixed(1) + 'px ui-monospace,Menlo,Consolas,monospace;color:' + (sim.power ? '#D8F5C8' : 'transparent') + ';text-shadow:' + (sim.power ? '0 0 2px rgba(190,255,170,.6)' : 'none') + ';';
+    f.el.style.cssText = st;
+  }
+  function applyFaces() { FACES.forEach(styleFace); }
+  function applyPart(name) { FACES.forEach(function (f) { if (f.part === name) styleFace(f); }); }
 
   // ---------- label penunjuk ----------
   var LABELS = [
@@ -446,6 +575,7 @@
     scene.style.transform = 'scale(' + scaleNow().toFixed(4) + ') rotateX(' + state.rx.toFixed(2) + 'deg) rotateY(' + state.ry.toFixed(2) + 'deg)';
     var ryN = ((((state.ry + 180) % 360) + 360) % 360) - 180;
     document.getElementById('readout').textContent = 'X ' + Math.round(state.rx) + '°  Y ' + Math.round(ryN) + '°';
+    placeHotspots();
     linesSvg.style.display = pillBox.style.display = state.labels ? '' : 'none';
     if (!state.labels) return;
     LABELS.forEach(function (L) {
@@ -491,7 +621,8 @@
     ['Bongkar tutup', $('toggles'), function () { return state.explode; }, function () { state.explode = !state.explode; }],
     ['Putar otomatis', $('toggles'), function () { return state.auto; }, function () { state.auto = !state.auto; }],
     ['Kaca', $('toggles'), function () { return state.glass; }, function () { state.glass = !state.glass; }],
-    ['Label', $('toggles'), function () { return state.labels; }, function () { state.labels = !state.labels; }]
+    ['Label', $('toggles'), function () { return state.labels; }, function () { state.labels = !state.labels; }],
+    ['Titik interaktif', $('toggles'), function () { return state.hots; }, function () { state.hots = !state.hots; }]
   ].map(function (t) {
     return { on: t[2], b: mkBtn(t[1], t[0], function () { t[3](); refreshUI(true); }) };
   });
@@ -507,23 +638,377 @@
 
   $('zoom').addEventListener('input', function (e) { state.zoom = Number(e.target.value); applyScene(); });
 
+  // bagian model di bawah kursor (klik langsung pada model, bukan hanya titik oranye)
+  function partAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    var p = el && el.closest ? el.closest('[data-part]') : null;
+    return p && scene.contains(p) ? p.dataset.part : '';
+  }
+  var hoverPart = '';
+  function setHover(part) {
+    if (part === hoverPart) return;
+    FACES.forEach(function (f) { if (f.part && (f.part === hoverPart || f.part === part)) f.el.classList.toggle('hl', f.part === part); });
+    hoverPart = part;
+    stage.classList.toggle('can-click', !!part);
+  }
+
   var drag = null;
   stage.addEventListener('pointerdown', function (e) {
+    if (e.target.closest && e.target.closest('.hs')) return;   // titik interaktif punya klik sendiri
     cancelAnimationFrame(tw);
-    drag = { x: e.clientX, y: e.clientY, rx: state.rx, ry: state.ry };
+    drag = { x: e.clientX, y: e.clientY, rx: state.rx, ry: state.ry, moved: false };
     try { stage.setPointerCapture(e.pointerId); } catch (err) {}
     state.dragging = true;
   });
   stage.addEventListener('pointermove', function (e) {
-    if (!drag) return;
+    if (!drag) {
+      if (e.pointerType === 'mouse' && !(e.target.closest && e.target.closest('.hs'))) setHover(partAt(e.clientX, e.clientY));
+      return;
+    }
+    if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 5) drag.moved = true;
+    if (!drag.moved) return;
+    setHover('');
     state.rx = Math.max(-90, Math.min(90, drag.rx - (e.clientY - drag.y) * 0.5));
     state.ry = drag.ry + (e.clientX - drag.x) * 0.5;
     applyScene();
     viewBtns.forEach(function (x) { x.b.setAttribute('aria-pressed', 'false'); });
   });
-  function endDrag() { drag = null; state.dragging = false; refreshUI(false); }
+  function endDrag(e) {
+    var wasClick = drag && !drag.moved && e && e.type === 'pointerup';
+    drag = null; state.dragging = false;
+    if (wasClick) { var p = partAt(e.clientX, e.clientY); if (p) act(p); }
+    refreshUI(false);
+  }
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('pointerleave', function () { if (!drag) setHover(''); });
+
+  // =====================================================================
+  //  SIMULASI PERANGKAT
+  // =====================================================================
+  var PARTS = {
+    lid:    { name: 'Tutup inkubator', a: [0, -152, 0], g: 'lid' },
+    lamp:   { name: 'Lampu pemanas', a: [110, -103, 12], g: 'lid' },
+    dht:    { name: 'DHT22', a: [-70, -62, 40], g: 'lid' },
+    ds:     { name: 'DS18B20', a: [6, 30, 60] },
+    ph:     { name: 'Sensor pH', a: [100, 50, 85] },
+    tray:   { name: 'Tray tempe', a: [-80, -27, 20] },
+    lcd:    { name: 'Layar LCD', a: [232, -24, 103] },
+    btnA:   { name: 'Tombol MODE', a: [202, 15, 107] },
+    btnB:   { name: 'Tombol OK', a: [244, 15, 107] },
+    led:    { name: 'LED status', a: [224, 38, 101] },
+    buzzer: { name: 'Buzzer', a: [262, 38, 102] },
+    esp:    { name: 'ESP32', a: [232, -72, 100] },
+    psu:    { name: 'Power supply', a: [330, 116, 80] }
+  };
+  var selected = '';
+  var hots = $('hots'), tip = $('hsTip');
+  Object.keys(PARTS).forEach(function (k) {
+    var P = PARTS[k], b = document.createElement('button');
+    b.type = 'button'; b.className = 'hs'; b.setAttribute('aria-label', P.name);
+    b.addEventListener('click', function () { act(k); });
+    b.addEventListener('mouseenter', function () { setHover(k); tip.textContent = P.name; tip.classList.add('show'); P.tipOn = true; placeHotspots(); });
+    b.addEventListener('mouseleave', function () { setHover(''); tip.classList.remove('show'); P.tipOn = false; });
+    b.addEventListener('focus', function () { setHover(k); });
+    b.addEventListener('blur', function () { setHover(''); });
+    hots.appendChild(b); P.btn = b;
+  });
+  function placeHotspots() {
+    hots.style.display = state.hots ? '' : 'none';
+    if (!state.hots) { tip.classList.remove('show'); return; }
+    Object.keys(PARTS).forEach(function (k) {
+      var P = PARTS[k], a = [P.a[0], P.a[1] + (P.g ? groupLift(P.g) : 0), P.a[2]];
+      var p = project(a);
+      var q = rotX(rotY([a[0] + SX, a[1] + SY, a[2]], state.ry), state.rx);
+      P.btn.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px)';
+      P.btn.classList.toggle('behind', q[2] < -70);
+      P.btn.classList.toggle('alarm', (k === 'buzzer' || k === 'led') && buzzing());
+      P.btn.classList.toggle('sel', k === selected);
+      if (P.tipOn) tip.style.transform = 'translate(' + (p[0] + 16).toFixed(1) + 'px,' + (p[1] - 30).toFixed(1) + 'px)';
+    });
+  }
+
+  // ---------- suara buzzer (WebAudio, dibuat setelah klik pertama) ----------
+  var actx = null;
+  function beep(freq, ms, when) {
+    if (!sim.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var t0 = actx.currentTime + (when || 0), o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + ms / 1000);
+      o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + ms / 1000 + 0.02);
+    } catch (err) {}
+  }
+  function click() { beep(2600, 35); }
+
+  // ---------- aturan alarm (sama dengan dashboard) ----------
+  function alarms() {
+    var a = [];
+    if (sim.tMedia > TH.tempMax) a.push('Suhu media ' + fmt(sim.tMedia) + ' °C');
+    if (sim.tAir > TH.airMax) a.push('Suhu udara ' + fmt(sim.tAir) + ' °C');
+    return a;
+  }
+  function warnings() {
+    var w = [];
+    if (sim.rh < TH.humMin) w.push('Kelembapan rendah'); else if (sim.rh > TH.humMax) w.push('Kelembapan tinggi');
+    if (sim.ph > TH.phMax) w.push('pH tinggi');
+    return w;
+  }
+  function alarmActive() { return sim.power && alarms().length > 0; }
+  function buzzing() { return alarmActive() && !sim.silenced; }
+  function fmt(v, d) { return v.toFixed(d === undefined ? 1 : d).replace('.', ','); }
+
+  // ---------- model fisika sederhana ----------
+  // panas dari tempe (reaksi kapang) memuncak sekitar jam ke-30
+  function selfHeat(t) { return 9.5 * Math.exp(-Math.pow((t - 30) / 9, 2)); }
+  function relax(x, target, k, dt) { return target + (x - target) * Math.exp(-k * dt); }
+  function physics(dt) {
+    var open = state.explode, n = Math.max(1, Math.ceil(dt / 0.02)), h = dt / n;
+    for (var i = 0; i < n; i++) {
+      // termostat pemanas
+      if (!sim.power || sim.heater === 'off') sim.heatOn = false;
+      else if (sim.heater === 'on') sim.heatOn = true;
+      else if (sim.tAir < TH.heatLo) sim.heatOn = true;
+      else if (sim.tAir > TH.heatHi) sim.heatOn = false;
+      var kAir = open ? 10 : 1.5;
+      var airTarget = sim.amb + (sim.heatOn ? 8 / kAir * 1.5 : 0) + 0.35 * (sim.tMedia - sim.amb) * (open ? 0.1 : 1);
+      sim.tAir = relax(sim.tAir, airTarget, kAir, h);
+      sim.tMedia = relax(sim.tMedia, sim.tAir + selfHeat(sim.t) * (open ? 0.75 : 1), 1.1, h);
+      var rhTarget = open ? 58 : 86 - (sim.heatOn ? 7 : 0) + selfHeat(sim.t) * 0.45;
+      sim.rh = relax(sim.rh, Math.min(97, rhTarget), open ? 9 : 1.8, h);
+      sim.t += h;
+    }
+    sim.ph = 6.4 - 0.55 * (1 - Math.exp(-sim.t / 22)) + Math.max(0, sim.t - 44) * 0.05;
+  }
+
+  // ---------- teks LCD (maks. 4 baris × 17 karakter) ----------
+  function hhmmss(s) { s = Math.floor(s); var p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(Math.floor(s / 3600)) + ':' + p(Math.floor(s / 60) % 60) + ':' + p(s % 60); }
+  function lcdText() {
+    if (!sim.power) return '';
+    if (buzzing() && sim.blink) {
+      return '!! ALARM SUHU !!\n' + (sim.tMedia > TH.tempMax ? 'Media ' + sim.tMedia.toFixed(1) + ' C' : 'Udara ' + sim.tAir.toFixed(1) + ' C')
+        + '\nTekan OK untuk\nmatikan buzzer';
+    }
+    if (sim.page === 0) return 'T Udara : ' + sim.tAir.toFixed(1) + ' C\nT Media : ' + sim.tMedia.toFixed(1) + ' C\nRH      : ' + Math.round(sim.rh) + ' %\npH      : ' + sim.ph.toFixed(2);
+    if (sim.page === 1) return 'Status : ' + (alarmActive() ? 'ALARM' : warnings().length ? 'PERIKSA' : 'NORMAL')
+      + '\nPemanas: ' + (sim.heater === 'auto' ? 'AUTO ' : '') + (sim.heatOn ? 'ON' : 'OFF')
+      + '\nTutup  : ' + (state.explode ? 'TERBUKA' : 'TERTUTUP') + '\nJam ke : ' + sim.t.toFixed(1);
+    return 'WiFi   : OK\nIP 192.168.1.20\nBatch  : T-001\nUp ' + hhmmss(sim.uptime);
+  }
+  function updateLCD() {
+    var txt = lcdText();
+    FACES.forEach(function (f) { if (f.label && f.el.textContent !== txt) f.el.textContent = txt; });
+  }
+
+  // ---------- log perangkat ----------
+  function log(msg, bad) {
+    var li = document.createElement('li');
+    if (bad) li.className = 'bad';
+    li.innerHTML = '<b>j-' + sim.t.toFixed(1) + '</b>';
+    li.appendChild(document.createTextNode(msg));
+    $('log').insertBefore(li, $('log').firstChild);
+    while ($('log').children.length > 30) $('log').removeChild($('log').lastChild);
+  }
+
+  // ---------- info komponen ----------
+  function phase(t) {
+    if (t < 6) return 'inkubasi awal';
+    if (t < 20) return 'pertumbuhan miselium';
+    if (t < 38) return 'panas puncak (tempe menghasilkan panas)';
+    if (t < 48) return 'pematangan';
+    return 'selesai – jika dibiarkan, fermentasi berlebih';
+  }
+  function infoFor(k) {
+    var heat = sim.heater === 'auto' ? 'OTOMATIS (nyala < ' + TH.heatLo + ' °C, mati > ' + TH.heatHi + ' °C)' : sim.heater === 'on' ? 'SELALU NYALA' : 'MATI';
+    switch (k) {
+      case 'lid': return ['Tutup inkubator', state.explode ? 'Terbuka: suhu udara cepat turun ke suhu ruangan dan kelembapan turun. Klik lagi untuk menutup.' : 'Tertutup. Klik untuk membuka – berguna saat suhu media terlalu panas.'];
+      case 'lamp': return ['Lampu pemanas', 'Mode ' + heat + '. Sekarang ' + (sim.heatOn && sim.power ? 'menyala' : 'mati') + '. Klik untuk ganti mode: otomatis → nyala → mati.'];
+      case 'dht': return ['DHT22 – suhu & kelembapan udara', 'Suhu udara ' + fmt(sim.tAir) + ' °C (batas ' + TH.airMax + ' °C), kelembapan ' + Math.round(sim.rh) + ' % (ideal ' + TH.humMin + '–' + TH.humMax + ' %).'];
+      case 'ds': return ['DS18B20 – suhu media tempe', 'Probe ditancapkan ke kedelai: ' + fmt(sim.tMedia) + ' °C. Di atas ' + TH.tempMax + ' °C buzzer berbunyi.'];
+      case 'ph': return ['Sensor pH (DFRobot SEN0161)', 'pH ' + fmt(sim.ph, 2) + '. Di atas ' + fmt(TH.phMax) + ' tandanya fermentasi berlebihan.'];
+      case 'tray': return ['Tray tempe', 'Jam ke-' + fmt(sim.t) + ': ' + phase(sim.t) + '. Tempe sendiri menghasilkan panas, puncaknya sekitar jam ke-30.'];
+      case 'lcd': return ['Layar LCD 16×4', ['Halaman 1: bacaan sensor', 'Halaman 2: status & pemanas', 'Halaman 3: WiFi & uptime'][sim.page] + '. Tekan tombol MODE untuk ganti halaman.'];
+      case 'btnA': return ['Tombol MODE', 'Mengganti halaman LCD (sensor → status → WiFi).'];
+      case 'btnB': return ['Tombol OK', buzzing() ? 'Alarm aktif – tekan untuk mematikan buzzer.' : 'Mematikan buzzer saat alarm. Sekarang tidak ada alarm.'];
+      case 'led': return ['LED status', !sim.power ? 'Mati – perangkat tidak menyala.' : alarmActive() ? 'Merah berkedip – ada alarm suhu.' : 'Hijau – semua normal.'];
+      case 'buzzer': return ['Buzzer piezo', buzzing() ? 'Sedang berbunyi! Tekan tombol OK atau turunkan suhu.' : sim.silenced && alarmActive() ? 'Dibisukan dengan tombol OK (alarm masih aktif).' : 'Diam. Berbunyi saat suhu media/udara > ' + TH.tempMax + ' °C.'];
+      case 'esp': return ['ESP32', 'Membaca semua sensor tiap detik, mengatur pemanas, LCD, LED, buzzer, dan mengirim data lewat WiFi. Uptime ' + hhmmss(sim.uptime) + '.'];
+      case 'psu': return ['Power supply 5 V', sim.power ? 'Menyala. Klik untuk mematikan perangkat.' : 'Mati. Klik untuk menyalakan perangkat.'];
+    }
+    return ['', ''];
+  }
+  function renderInfo() {
+    if (!selected) return;
+    var i = infoFor(selected), box = $('info');
+    box.innerHTML = '<b></b><span></span>';
+    box.firstChild.textContent = i[0]; box.lastChild.textContent = i[1];
+  }
+
+  // ---------- aksi saat bagian diklik ----------
+  function press(part) {
+    sim.pressed[part] = true; applyPart(part);
+    setTimeout(function () { sim.pressed[part] = false; applyPart(part); }, 160);
+  }
+  function act(k) {
+    selected = k;
+    switch (k) {
+      case 'btnA':
+        press('btnA');
+        if (sim.power) { click(); sim.page = (sim.page + 1) % 3; log('MODE → halaman ' + (sim.page + 1)); }
+        break;
+      case 'btnB':
+        press('btnB');
+        if (sim.power) {
+          click();
+          if (buzzing()) { sim.silenced = true; log('Buzzer dimatikan dengan tombol OK'); }
+          else log('Tombol OK (tidak ada alarm)');
+        }
+        break;
+      case 'psu': case 'led':
+        if (k === 'led' && sim.power) break;   // LED hanya menyalakan saat mati
+        sim.power = !sim.power;
+        if (sim.power) { sim.uptime = 0; sim.page = 0; beep(1800, 90); beep(2400, 90, 0.12); }
+        log(sim.power ? 'Perangkat dinyalakan' : 'Perangkat dimatikan');
+        applyFaces();
+        break;
+      case 'lid':
+        state.explode = !state.explode;
+        log(state.explode ? 'Tutup dibuka' : 'Tutup ditutup');
+        refreshUI(true);
+        break;
+      case 'lamp':
+        sim.heater = { auto: 'on', on: 'off', off: 'auto' }[sim.heater];
+        log('Pemanas: ' + { auto: 'otomatis', on: 'selalu nyala', off: 'mati' }[sim.heater]);
+        physics(0); applyPart('lamp');
+        break;
+    }
+    updateLCD(); renderInfo(); renderPanel(); placeHotspots();
+  }
+
+  // ---------- panel ----------
+  var simBtns = {};
+  [['power', 'Daya', function () { act('psu'); }],
+   ['lid', 'Tutup', function () { act('lid'); }],
+   ['heat', 'Pemanas', function () { act('lamp'); }],
+   ['sound', 'Suara buzzer', function () { sim.sound = !sim.sound; if (!sim.sound) actx && actx.suspend && actx.suspend(); else actx && actx.resume && actx.resume(); renderPanel(); }]
+  ].forEach(function (d) { simBtns[d[0]] = mkBtn($('simBtns'), d[1], d[2]); });
+  var speedBtns = [[0, 'Jeda'], [60, '60×'], [600, '600×'], [3600, '3600×']].map(function (s) {
+    var b = mkBtn($('speeds'), s[1], function () { sim.speed = s[0]; renderPanel(); });
+    b.title = s[0] ? '1 detik nyata = ' + (s[0] / 60) + ' menit simulasi' : 'Hentikan waktu';
+    return { b: b, v: s[0] };
+  });
+  $('amb').addEventListener('input', function (e) { sim.amb = Number(e.target.value); renderPanel(); });
+  function resetSim(msg) {
+    sim.t = 0; sim.tMedia = sim.tAir = sim.amb; sim.rh = 72; sim.silenced = false; sim.warnWas = {}; sim.alarmWas = false;
+    $('log').innerHTML = ''; log(msg || 'Batch baru dimulai'); physics(0); updateLCD(); renderPanel(); renderInfo();
+  }
+  $('simReset').addEventListener('click', function () {
+    resetSim();
+    if (link.connected) sendParent({ type: 'rewind' });
+  });
+
+  // ---------- sambungan ke dashboard (saat dibuka di dalam iframe menu "Model 3D") ----------
+  // Pesan bolak-balik lewat postMessage; data hanya diterima dashboard bila sumber datanya "Model 3D".
+  var embedded = window.parent && window.parent !== window;
+  var link = { connected: false };
+  function sendParent(msg) {
+    if (!embedded) return;
+    msg.src = 'fermentosense-3d';
+    try { window.parent.postMessage(msg, '*'); } catch (err) {}
+  }
+  window.addEventListener('message', function (e) {
+    if (!embedded || e.source !== window.parent) return;
+    var d = e.data;
+    if (!d || d.src !== 'fermentosense-dash') return;
+    if (d.type === 'connect') {
+      link.connected = true;
+      resetSim('Terhubung ke dashboard – batch simulasi dimulai dari jam ke-0');
+      if (!sim.power) { sim.power = true; applyFaces(); }
+    } else if (d.type === 'disconnect' && link.connected) {
+      link.connected = false;
+      log('Terputus dari dashboard');
+    }
+    renderPanel();
+  });
+  if (embedded) {
+    $('simLink').hidden = false;
+    $('simLink').addEventListener('click', function () {
+      sendParent({ type: link.connected ? 'request-disconnect' : 'request-connect' });
+    });
+    sendParent({ type: 'hello' });
+  }
+
+  function renderPanel() {
+    simBtns.power.textContent = sim.power ? 'Daya: NYALA' : 'Daya: MATI';
+    simBtns.power.setAttribute('aria-pressed', String(sim.power));
+    simBtns.lid.textContent = state.explode ? 'Tutup: TERBUKA' : 'Tutup: TERTUTUP';
+    simBtns.lid.setAttribute('aria-pressed', String(state.explode));
+    simBtns.heat.textContent = 'Pemanas: ' + { auto: 'AUTO', on: 'NYALA', off: 'MATI' }[sim.heater];
+    simBtns.heat.setAttribute('aria-pressed', String(sim.heater !== 'off'));
+    simBtns.sound.setAttribute('aria-pressed', String(sim.sound));
+    speedBtns.forEach(function (s) { s.b.setAttribute('aria-pressed', String(s.v === sim.speed)); });
+    $('ambOut').textContent = fmt(sim.amb) + ' °C';
+    $('simLink').textContent = link.connected ? 'Terhubung ke dashboard · Putuskan' : 'Kirim data ke dashboard';
+    $('simLink').setAttribute('aria-pressed', String(link.connected));
+
+    var a = alarms(), w = warnings();
+    $('simStat').innerHTML =
+      '<span class="tag' + (sim.power ? ' on' : '') + '"><i></i>' + (sim.power ? 'Perangkat menyala' : 'Perangkat mati') + '</span>'
+      + '<span class="tag' + (sim.power && sim.heatOn ? ' on' : '') + '"><i></i>Pemanas ' + (sim.power && sim.heatOn ? 'nyala' : 'mati') + '</span>'
+      + (link.connected ? '<span class="tag' + (sim.power ? ' on' : '') + '"><i></i>' + (sim.power ? 'Mengirim ke dashboard' : 'Dashboard: tidak ada data') + '</span>' : '')
+      + (a.length && sim.power ? '<span class="tag bad"><i></i>' + (sim.silenced ? 'Alarm (dibisukan)' : 'ALARM – buzzer bunyi') + '</span>' : '')
+      + (w.length && sim.power ? '<span class="tag bad"><i></i>' + w.join(', ') + '</span>' : '');
+
+    var rows = [
+      ['Suhu media', fmt(sim.tMedia) + ' °C', sim.tMedia > TH.tempMax],
+      ['Suhu udara', fmt(sim.tAir) + ' °C', sim.tAir > TH.airMax],
+      ['Kelembapan', Math.round(sim.rh) + ' %', sim.rh < TH.humMin || sim.rh > TH.humMax],
+      ['pH', fmt(sim.ph, 2), sim.ph > TH.phMax]
+    ];
+    $('reads').innerHTML = rows.map(function (r) {
+      return '<div class="rd' + (r[2] && sim.power ? ' bad' : '') + '"><small>' + r[0] + '</small><b>' + (sim.power ? r[1] : '--') + '</b></div>';
+    }).join('');
+    $('simJam').textContent = 'jam ke-' + fmt(sim.t);
+    $('simFase').textContent = phase(sim.t).split(' (')[0].split(' –')[0];
+    var pct = Math.min(100, sim.t / 48 * 100);
+    $('simPct').textContent = Math.round(pct) + '%';
+    $('simBar').style.width = pct + '%';
+  }
+
+  // ---------- detak simulasi ----------
+  var lastTick = performance.now(), beepTimer = 0;
+  setInterval(function () {
+    var now = performance.now(), realS = Math.min(1, (now - lastTick) / 1000);
+    lastTick = now;
+    if (sim.speed) physics(realS * sim.speed / 3600);
+    if (sim.power) sim.uptime += realS * Math.max(1, sim.speed);
+    sim.blink = !sim.blink;
+
+    // perubahan kondisi → log + suara
+    var on = alarmActive();
+    if (on && !sim.alarmWas) { sim.silenced = false; log('ALARM: ' + alarms().join(', '), true); }
+    if (!on && sim.alarmWas && sim.power) log('Suhu kembali normal');
+    sim.alarmWas = on;
+    ['Kelembapan rendah', 'Kelembapan tinggi', 'pH tinggi'].forEach(function (k) {
+      var now2 = sim.power && warnings().indexOf(k) >= 0;
+      if (now2 && !sim.warnWas[k]) log('Peringatan: ' + k, true);
+      sim.warnWas[k] = now2;
+    });
+    if (buzzing()) {
+      beepTimer -= 0.5;
+      if (beepTimer <= 0) { beep(2200, 120); beep(2200, 120, 0.2); beep(2200, 120, 0.4); beepTimer = 2.5; }
+    } else beepTimer = 0;
+
+    // perangkat yang menyala mengirim bacaan ke dashboard (seperti ESP32 lewat WiFi)
+    if (link.connected && sim.power) {
+      sendParent({ type: 'reading', t: sim.t, temp: +sim.tMedia.toFixed(2), air: +sim.tAir.toFixed(2), hum: +sim.rh.toFixed(1), ph: +sim.ph.toFixed(2) });
+    }
+
+    applyPart('led'); applyPart('lamp'); applyPart('buzzer');
+    updateLCD(); renderPanel(); renderInfo(); placeHotspots();
+  }, 500);
 
   setInterval(function () { if (state.auto && !drag) { state.ry += 0.5; applyScene(); } }, 16);
 
@@ -531,8 +1016,12 @@
   window.addEventListener('resize', function () { measure(); applyScene(); });
 
   measure();
+  physics(0);
   applyFaces();
   refreshUI(false);
+  updateLCD();
+  renderPanel();
+  log('Perangkat menyala, batch T-001 dimulai');
 })();
 </script>
 </body>

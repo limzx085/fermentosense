@@ -339,9 +339,10 @@ function renderStatus() {
   renderStatusMeta();
 }
 function renderStatusMeta() {
-  $('#statusMeta').textContent = last
-    ? `Pembaruan terakhir: ${fmtHMS(last.ts)}${isLive() ? '' : ' (tidak langsung)'}`
-    : 'Belum ada data';
+  $('#statusMeta').textContent = !last ? 'Belum ada data'
+    : src.type === 'model3d'
+      ? `Simulasi Model 3D · jam ke-${fmt((last.ts - settings.start) / HOUR)}${isLive() ? '' : ' (jeda)'}`
+      : `Pembaruan terakhir: ${fmtHMS(last.ts)}${isLive() ? '' : ' (tidak langsung)'}`;
   const row = $('#buzzerRow');
   const ring = buzzerRinging();
   row.className = 'buzzer' + (ring ? ' on' : '');
@@ -374,7 +375,8 @@ function renderNotifs() {
 
 function renderTimes() {
   const total = settings.durationH * HOUR;
-  const elapsed = Math.max(0, Date.now() - settings.start);
+  // sumber Model 3D: durasi mengikuti jam simulasi, bukan jam dinding
+  const elapsed = src.type === 'model3d' && last ? Math.max(0, last.ts - settings.start) : Math.max(0, Date.now() - settings.start);
   $('#elapsed').textContent = fmtDur(elapsed);
   $('#remain').textContent = elapsed >= total ? '0 jam' : fmtDur(total - elapsed);
   $('#eta').textContent = fmtDT(settings.start + total);
@@ -387,7 +389,14 @@ function renderSource() {
 }
 
 /* ---------- grafik (SVG buatan sendiri, tanpa library) ---------- */
-const COLORS = { temp:'#E39A2D', air:'#164A2B', hum:'#7FA23A', ph:'#8B4A2B' };
+// Warna grafik diambil dari variabel CSS (--c-*) agar ikut tema terang/gelap.
+const COLORS = { temp:'#E39A2D', air:'#1b5e20', hum:'#4caf50', ph:'#6d4c41',
+  grid:'#e0d6c9', tick:'#6f6f6f', axis:'#c9bfb2', title:'#303030', empty:'#919191', cross:'#1c2a1f' };
+function readChartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of Object.keys(COLORS)) { const v = cs.getPropertyValue('--c-' + k).trim(); if (v) COLORS[k] = v; }
+}
+window.addEventListener('themechange', () => { if (page === 'dashboard') requestAnimationFrame(renderChart); });
 function niceStep(raw) {
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
   for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw - 1e-9) return m * p;
@@ -411,6 +420,7 @@ function hourLabel(v, step) {
 
 let chartCtx = null;
 function renderChart() {
+  readChartColors();
   const host = $('#chart');
   if (!host.clientWidth) return;
   const W = Math.max(host.clientWidth, 320), H = Math.round(Math.max(300, Math.min(380, W * 0.48)));
@@ -452,27 +462,27 @@ function renderChart() {
   // grid + tick tiga sumbu
   for (let i = 0; i <= 5; i++) {
     const y = m.t + ph * (1 - i / 5);
-    s += `<line x1="${m.l}" x2="${m.l + pw}" y1="${y}" y2="${y}" stroke="#e6ece8"/>`;
-    s += `<text x="${m.l - 10}" y="${y + 4}" text-anchor="end" font-size="12.5" fill="#44534b">${tickLabel(aT.min + i * aT.step, aT.step)}</text>`;
-    s += `<text x="${m.l + pw + 10}" y="${y + 4}" font-size="12.5" fill="#44534b">${tickLabel(aH.min + i * aH.step, aH.step)}</text>`;
-    s += `<text x="${m.l + pw + 74}" y="${y + 4}" font-size="12.5" fill="#44534b">${tickLabel(aP.min + i * aP.step, aP.step)}</text>`;
+    s += `<line x1="${m.l}" x2="${m.l + pw}" y1="${y}" y2="${y}" stroke="${COLORS.grid}"/>`;
+    s += `<text x="${m.l - 10}" y="${y + 4}" text-anchor="end" font-size="12.5" fill="${COLORS.tick}">${tickLabel(aT.min + i * aT.step, aT.step)}</text>`;
+    s += `<text x="${m.l + pw + 10}" y="${y + 4}" font-size="12.5" fill="${COLORS.tick}">${tickLabel(aH.min + i * aH.step, aH.step)}</text>`;
+    s += `<text x="${m.l + pw + 74}" y="${y + 4}" font-size="12.5" fill="${COLORS.tick}">${tickLabel(aP.min + i * aP.step, aP.step)}</text>`;
   }
   // sumbu X
   const win = x1 - x0;
   const xs = X_STEPS.find(v => win / v <= 7) || 24;
   for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs) {
-    s += `<text x="${X(v)}" y="${m.t + ph + 20}" text-anchor="middle" font-size="12.5" fill="#44534b">${hourLabel(v, xs)}</text>`;
-    s += `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t + ph}" y2="${m.t + ph + 4}" stroke="#9aa8a0"/>`;
+    s += `<text x="${X(v)}" y="${m.t + ph + 20}" text-anchor="middle" font-size="12.5" fill="${COLORS.tick}">${hourLabel(v, xs)}</text>`;
+    s += `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t + ph}" y2="${m.t + ph + 4}" stroke="${COLORS.axis}"/>`;
   }
-  s += `<line x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}" stroke="#9aa8a0"/>`;
-  s += `<line x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${m.t + ph}" stroke="#9aa8a0"/>`;
-  s += `<line x1="${m.l + pw}" x2="${m.l + pw}" y1="${m.t}" y2="${m.t + ph}" stroke="#9aa8a0"/>`;
-  s += `<line x1="${m.l + pw + 66}" x2="${m.l + pw + 66}" y1="${m.t}" y2="${m.t + ph}" stroke="#9aa8a0"/>`;
+  s += `<line x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}" stroke="${COLORS.axis}"/>`;
+  s += `<line x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${m.t + ph}" stroke="${COLORS.axis}"/>`;
+  s += `<line x1="${m.l + pw}" x2="${m.l + pw}" y1="${m.t}" y2="${m.t + ph}" stroke="${COLORS.axis}"/>`;
+  s += `<line x1="${m.l + pw + 66}" x2="${m.l + pw + 66}" y1="${m.t}" y2="${m.t + ph}" stroke="${COLORS.axis}"/>`;
   // judul sumbu
   s += `<text transform="translate(14 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="13" fill="${COLORS.temp}">Suhu (°C)</text>`;
   s += `<text transform="translate(${m.l + pw + 52} ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="13" fill="${COLORS.hum}">Kelembapan (%)</text>`;
   s += `<text transform="translate(${m.l + pw + 118} ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="13" fill="${COLORS.ph}">pH</text>`;
-  s += `<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" font-size="13" fill="#2b3a32">Waktu Fermentasi (jam)</text>`;
+  s += `<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" font-size="13" fill="${COLORS.title}">Waktu Fermentasi (jam)</text>`;
   // garis batas notifikasi
   const dash = (a, v, c) => (v >= a.min && v <= a.max)
     ? `<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(a, v)}" y2="${Y(a, v)}" stroke="${c}" stroke-width="1.2" stroke-dasharray="5 5" opacity=".55"/>` : '';
@@ -481,7 +491,7 @@ function renderChart() {
   // data
   const series = [['temp', aT], ['air', aT], ['hum', aH], ['ph', aP]];
   if (!pts.length) {
-    s += `<text x="${m.l + pw / 2}" y="${m.t + ph / 2}" text-anchor="middle" font-size="15" fill="#7b8a82">Belum ada data pada rentang ini. Klik “Sumber Data” untuk memulai.</text>`;
+    s += `<text x="${m.l + pw / 2}" y="${m.t + ph / 2}" text-anchor="middle" font-size="15" fill="${COLORS.empty}">Belum ada data pada rentang ini. Klik “Sumber Data” untuk memulai.</text>`;
   }
   for (const [k, a] of series) {
     const p = pts.filter(q => isNum(q[k]));
@@ -490,7 +500,7 @@ function renderChart() {
     s += `<path d="${d}" fill="none" stroke="${COLORS[k]}" stroke-width="2.2" stroke-linejoin="round"/>`;
     if (p.length <= 60) s += p.map(q => `<circle cx="${X(q.x).toFixed(1)}" cy="${Y(a, q[k]).toFixed(1)}" r="3.6" fill="${COLORS[k]}"/>`).join('');
   }
-  s += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ph}" stroke="#16261d" stroke-opacity=".35" stroke-dasharray="3 3" visibility="hidden"/>`;
+  s += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ph}" stroke="${COLORS.cross}" stroke-opacity=".35" stroke-dasharray="3 3" visibility="hidden"/>`;
   s += `</svg><div class="tip" id="tip"></div>`;
   host.innerHTML = s;
   chartCtx = { pts, m, pw, W, X, x0, x1 };
@@ -573,7 +583,12 @@ function downloadCSV() {
 /* =====================================================================
    6. SUMBER DATA: simulator, tempel serial monitor, USB serial
    ===================================================================== */
-function setSource(type, label) { src = { type, label }; renderSource(); }
+function setSource(type, label) {
+  const prev = src.type;
+  src = { type, label };
+  if (prev === 'model3d' && type !== 'model3d') modelSourceLeft();   // sumber lain dipilih -> lepas Model 3D
+  renderSource();
+}
 
 /* --- simulator --- */
 const sim = { temp:31.2, air:29, hum:74, ph:5.7, timer:null };
@@ -817,9 +832,61 @@ function usbCleanup() {
 $('#usbConnect').addEventListener('click', usbConnect);
 $('#usbDisconnect').addEventListener('click', usbDisconnect);
 
+/* --- Model 3D (simulasi perangkat di iframe menu "Model 3D") ---
+   Iframe mengirim pesan {src:'fermentosense-3d', type:'reading', t, temp, air, hum, ph} tiap ½ detik.
+   t = jam simulasi, jadi waktu data = mulai batch + t jam (grafik mengikuti jam fermentasi simulasi). */
+const modelFrame = $('#modelFrame');
+const model = { ready:false, pending:false };
+function toModel(msg) {
+  try { modelFrame.contentWindow?.postMessage({ src:'fermentosense-dash', ...msg }, '*'); } catch {}
+}
+function modelUI() {
+  const on = src.type === 'model3d';
+  $('#modelConnect').disabled = on; $('#modelDisconnect').disabled = !on;
+  $('#modelStatus').textContent = on
+    ? (isLive() ? 'Terhubung – data mengalir dari simulasi Model 3D.' : 'Terhubung – menunggu data (perangkat di Model 3D mati atau belum dimuat).')
+    : 'Belum terhubung.';
+}
+function modelConnect(fromFrame) {
+  if ((samples.length || notifs.length) && !confirm('Hubungkan ke simulasi Model 3D?\nBatch baru akan dimulai: riwayat dan notifikasi batch sekarang dihapus.')) return;
+  if (sim.timer) simStop();
+  if (usb.port) usbDisconnect();
+  resetData(); settings.start = Date.now(); flushSave();
+  setSource('model3d', 'Model 3D');
+  // iframe dimuat "lazy"; paksa dimuat lalu kirim perintah connect setelah iframe menyapa (hello)
+  modelFrame.loading = 'eager';
+  if (model.ready) toModel({ type:'connect' }); else model.pending = true;
+  if (!fromFrame) { modal.close(); location.hash = '#model3d'; }
+  modelUI(); renderAll();
+  toast('Terhubung ke Model 3D. Klik bagian model; dashboard ikut berubah.');
+}
+function modelDisconnect() {
+  if (src.type === 'model3d') setSource('none'); else modelSourceLeft();
+  modelUI(); toast('Model 3D diputus dari dashboard.');
+}
+function modelSourceLeft() { toModel({ type:'disconnect' }); model.pending = false; }
+window.addEventListener('message', e => {
+  if (e.source !== modelFrame.contentWindow) return;          // hanya dari iframe Model 3D milik kita
+  const d = e.data;
+  if (!d || d.src !== 'fermentosense-3d') return;
+  if (d.type === 'hello') {
+    model.ready = true;
+    if (model.pending || src.type === 'model3d') { model.pending = false; toModel({ type:'connect' }); }
+  } else if (d.type === 'request-connect') modelConnect(true);
+  else if (d.type === 'request-disconnect') modelDisconnect();
+  else if (d.type === 'reading' && src.type === 'model3d' && isNum(d.t)) {
+    ingest({ temp:d.temp, air:d.air, hum:d.hum, ph:d.ph }, { ts: settings.start + d.t * HOUR });
+  } else if (d.type === 'rewind' && src.type === 'model3d') {
+    resetData(); settings.start = Date.now(); flushSave(); renderAll();
+    toast('Simulasi Model 3D diulang – riwayat batch dikosongkan.');
+  }
+});
+$('#modelConnect').addEventListener('click', () => modelConnect(false));
+$('#modelDisconnect').addEventListener('click', modelDisconnect);
+
 /* --- modal --- */
 const modal = $('#srcModal');
-const openModal = () => { syncSliders(); modal.showModal(); };
+const openModal = () => { syncSliders(); modelUI(); modal.showModal(); };
 $('#sourcePill').addEventListener('click', openModal);
 $('#btnOpenSource').addEventListener('click', openModal);
 $('#srcClose').addEventListener('click', () => modal.close());
