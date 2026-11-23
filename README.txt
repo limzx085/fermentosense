@@ -1,8 +1,12 @@
 FermentoSense - Monitoring Fermentasi Tempe Berbasis IoT
 =========================================================
 
-CARA MENJALANKAN
-1. Ekstrak ZIP ini.
+WEBSITE ONLINE
+https://limzx085.github.io/fermentosense/
+(GitHub Pages, otomatis diperbarui setiap ada push ke branch main)
+
+CARA MENJALANKAN DI KOMPUTER SENDIRI
+1. Unduh repo ini (Code -> Download ZIP) lalu ekstrak.
 2. Klik dua kali "index.html" (disarankan Chrome atau Edge).
    Tidak perlu internet atau instalasi apa pun.
 
