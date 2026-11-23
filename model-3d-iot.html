@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Model 3D Node Sensor IoT</title>
+<title>FermentoSense – Model 3D (palet logo)</title>
 <style>
   :root{
     --green:#164A2B; --cream:#F4ECD9; --amber:#E39A2D;
@@ -13,110 +13,93 @@
   body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   button{font-family:inherit}
   button:focus-visible,input:focus-visible{outline:3px solid #B45309;outline-offset:2px}
-  .app{display:flex;flex-wrap:wrap;gap:24px;padding:24px;max-width:1500px;margin:0 auto}
-  .stage{flex:999 1 560px;min-width:0;height:min(820px,calc(100vh - 48px));min-height:480px;position:relative;overflow:hidden;
-    border-radius:16px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 40%,#FFFDF7 0%,#EFE6CF 100%);
+  .app{display:flex;flex-wrap:wrap;gap:20px;padding:20px;max-width:1700px;margin:0 auto}
+  .stage{flex:999 1 600px;min-width:0;height:min(880px,calc(100vh - 40px));min-height:520px;position:relative;overflow:hidden;
+    border-radius:18px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 35%,#FFFDF7 0%,#EFE6CF 100%);
     perspective:1800px;cursor:grab;touch-action:none;user-select:none}
   .stage:active{cursor:grabbing}
   #scene{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+  #lines{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .pill{position:absolute;left:0;top:0;pointer-events:none;background:#FFFDF7;border:2px solid var(--green);border-radius:999px;color:var(--green);
+    padding:5px 14px;font-weight:700;font-size:14px;line-height:1.15;text-align:center;white-space:nowrap;box-shadow:0 2px 6px rgba(22,74,43,.16)}
+  .pill small{display:block;font-size:10.5px;font-weight:600;color:var(--muted)}
   .hud{position:absolute;pointer-events:none;color:var(--muted)}
-  .hud.tl{left:20px;top:18px;font-size:13px;font-weight:500}
-  .hud.bl{left:20px;bottom:16px;font:12px ui-monospace,Menlo,Consolas,monospace}
-  .panel{flex:1 1 320px;min-width:0;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;
-    display:flex;flex-direction:column;gap:22px;align-self:flex-start}
+  .hud.tl{left:20px;top:16px;font-size:13px;font-weight:500}
+  .hud.bl{left:20px;bottom:14px;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .panel{flex:1 1 300px;min-width:0;max-width:400px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;
+    display:flex;flex-direction:column;gap:20px;align-self:flex-start}
   .head{display:flex;align-items:center;gap:14px}
-  h1{margin:0;font-size:26px;line-height:1.15}
-  .sub{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--muted)}
-  .lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:block}
-  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
-  .btn{min-height:44px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink);border:1px solid #CDBF9A}
+  h1{margin:0;font-size:22px;line-height:1.15}
+  .sub{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--muted)}
+  .lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:block}
+  .grid{display:grid;gap:8px;margin-bottom:8px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .btn{min-height:44px;padding:0 8px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink);border:1px solid #CDBF9A}
   .btn[aria-pressed="true"]{background:var(--green);color:var(--bg);border-color:var(--green)}
   input[type=range]{width:100%;height:44px;margin:0;accent-color:var(--green)}
-  .colors{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .colors label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
-  .colors input[type=color]{width:100%;height:40px;padding:2px;border:1px solid #CDBF9A;border-radius:8px;background:#fff;cursor:pointer}
-  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+  .pal{display:flex;gap:10px}
+  .pal div{flex:1;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+  .pal span{height:36px;border-radius:8px;border:1px solid rgba(0,0,0,.15)}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
   li{display:flex;align-items:center;gap:10px}
-  li i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.2);flex:none}
+  li i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.25);flex:none}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="stage" id="stage" role="img" aria-label="Model 3D kasar node sensor IoT dengan logo di penutup atas. Seret untuk memutar.">
-    <div id="scene">
-      <div id="shadow"></div>
-      <div id="grid"></div>
-      <div id="logo">
-        <svg viewBox="335 145 390 350" width="100%" height="100%" style="display:block" aria-hidden="true">
-          <rect x="335" y="145" width="390" height="350" rx="26" fill="#FAF5E8"/>
-          <rect x="347" y="258" width="268" height="224" rx="62" fill="#164A2B"/>
-          <ellipse cx="431" cy="339" rx="38" ry="28" transform="rotate(-30 431 339)" fill="#F4ECD9"/>
-          <ellipse cx="521" cy="323" rx="38" ry="28" transform="rotate(-25 521 323)" fill="#F4ECD9"/>
-          <ellipse cx="471" cy="413" rx="41" ry="25" transform="rotate(-5 471 413)" fill="#F4ECD9"/>
-          <ellipse cx="558" cy="407" rx="35" ry="26" transform="rotate(35 558 407)" fill="#F4ECD9"/>
-          <path d="M610 168 A90 90 0 0 1 700 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
-          <path d="M610 204 A54 54 0 0 1 664 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
-          <circle cx="614" cy="258" r="14" fill="#E39A2D"/>
-        </svg>
-      </div>
-    </div>
+  <div class="stage" id="stage" role="img" aria-label="Model 3D kasar inkubator tempe FermentoSense dengan logo dan palet warna sendiri. Seret untuk memutar.">
+    <div id="scene"></div>
+    <svg id="lines" aria-hidden="true"></svg>
+    <div id="pills"></div>
     <div class="hud tl">Seret untuk memutar</div>
     <div class="hud bl" id="readout"></div>
   </div>
 
   <aside class="panel">
     <div class="head">
-      <svg viewBox="335 145 390 350" width="56" height="50" style="flex:none" aria-hidden="true">
-        <rect x="335" y="145" width="390" height="350" rx="26" fill="#FAF5E8"/>
-        <rect x="347" y="258" width="268" height="224" rx="62" fill="#164A2B"/>
-        <ellipse cx="431" cy="339" rx="38" ry="28" transform="rotate(-30 431 339)" fill="#F4ECD9"/>
-        <ellipse cx="521" cy="323" rx="38" ry="28" transform="rotate(-25 521 323)" fill="#F4ECD9"/>
-        <ellipse cx="471" cy="413" rx="41" ry="25" transform="rotate(-5 471 413)" fill="#F4ECD9"/>
-        <ellipse cx="558" cy="407" rx="35" ry="26" transform="rotate(35 558 407)" fill="#F4ECD9"/>
-        <path d="M610 168 A90 90 0 0 1 700 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
-        <path d="M610 204 A54 54 0 0 1 664 258" fill="none" stroke="#E39A2D" stroke-width="22" stroke-linecap="round"/>
-        <circle cx="614" cy="258" r="14" fill="#E39A2D"/>
-      </svg>
+      <div id="headIcon" style="flex:none;width:56px;height:50px"></div>
       <div>
-        <h1>Node Sensor IoT</h1>
-        <p class="sub">Model kasar ESP32 + DHT22. Skala 1 px = 1 mm.</p>
+        <h1>FermentoSense</h1>
+        <p class="sub">Model 3D kasar inkubator tempe dengan logo dan palet warna sendiri.</p>
       </div>
     </div>
 
     <div>
       <span class="lbl">Sudut pandang</span>
-      <div class="grid2" id="views"></div>
+      <div class="grid g3" id="views"></div>
     </div>
 
     <div>
       <span class="lbl">Tampilan</span>
-      <div class="grid2" id="modes"></div>
-      <div class="grid2" id="toggles"></div>
+      <div class="grid g2" id="modes"></div>
+      <div class="grid g2" id="toggles"></div>
     </div>
 
     <div>
       <label class="lbl" for="zoom">Zoom</label>
-      <input id="zoom" type="range" min="0.6" max="1.6" step="0.05" value="1">
+      <input id="zoom" type="range" min="0.6" max="2" step="0.05" value="1">
     </div>
 
     <div>
-      <span class="lbl">Warna</span>
-      <div class="colors">
-        <label>Casing<input type="color" id="cCase" value="#164a2b"></label>
-        <label>Penutup<input type="color" id="cLid" value="#f4ecd9"></label>
-        <label>Sensor<input type="color" id="cSensor" value="#e39a2d"></label>
+      <span class="lbl">Palet dari logo</span>
+      <div class="pal">
+        <div><span style="background:#164A2B"></span>Hijau hutan</div>
+        <div><span style="background:#F4ECD9"></span>Krem</div>
+        <div><span style="background:#E39A2D"></span>Oranye</div>
       </div>
     </div>
 
     <div>
       <span class="lbl">Komponen</span>
       <ul>
-        <li><i id="swCase"></i>Casing (alas + dinding)</li>
-        <li><i id="swLid"></i>Penutup atas + logo</li>
-        <li><i style="background:#0B1F14"></i>Layar OLED, antena</li>
-        <li><i style="background:#2F7D4F"></i>PCB, modul ESP32, header</li>
-        <li><i id="swSensor"></i>Sensor DHT22, tombol reset, LED</li>
-        <li><i style="background:#9AA1A9"></i>Port USB-C (depan)</li>
+        <li><i style="background:#F4ECD9"></i>Rangka + alas (krem)</li>
+        <li><i style="background:#164A2B"></i>Sudut, kaki, handle, antena (hijau)</li>
+        <li><i style="background:#E39A2D"></i>DHT22, sensor pH, LCD bezel, tombol (oranye)</li>
+        <li><i style="background:#DCE8D8"></i>Kaca depan dan kiri</li>
+        <li><i style="background:#F0DC9A"></i>Tray tempe (2 rak)</li>
+        <li><i style="background:#CFC7B2"></i>DS18B20 (probe stainless)</li>
+        <li><i style="background:#0F3320"></i>Layar LCD, power supply</li>
       </ul>
     </div>
   </aside>
@@ -124,127 +107,374 @@
 
 <script>
 (function () {
-  var state = { rx: -24, ry: -32, zoom: 1, wire: false, explode: false, auto: false, logo: true, dragging: false };
-  var colors = { caseC: '#164a2b', lidC: '#f4ecd9', sensorC: '#e39a2d' };
-  var drag = null;
-  var $ = function (id) { return document.getElementById(id); };
+  'use strict';
+  var D2R = Math.PI / 180;
+  var PERSP = 1800;
+  var SX = -97.5, SY = 20;
+  var state = { rx: -14, ry: 24, zoom: 1, wire: false, explode: false, auto: false, glass: true, labels: true, dragging: false };
 
+  // ---------- palet logo ----------
+  var GREEN = '#164A2B', CREAM = '#F4ECD9', AMBER = '#E39A2D', INK = '#14181C', LCDG = '#0F3320';
+  var FRAME = CREAM, LID = '#EBDFC4', WALL_B = '#EADBB5', WALL_R = '#E2D1A6', WALL_C = '#E6DABB', WALL_S = '#D8CAA4';
+
+  // ---------- matematika rotasi (sama dengan aturan CSS) ----------
+  function rotX(v, a) { a *= D2R; var c = Math.cos(a), s = Math.sin(a); return [v[0], v[1] * c - v[2] * s, v[1] * s + v[2] * c]; }
+  function rotY(v, a) { a *= D2R; var c = Math.cos(a), s = Math.sin(a); return [v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c]; }
+  function rotZ(v, a) { a *= D2R; var c = Math.cos(a), s = Math.sin(a); return [v[0] * c - v[1] * s, v[0] * s + v[1] * c, v[2]]; }
+  function applyOps(ops, v) {
+    for (var i = ops.length - 1; i >= 0; i--) {
+      var o = ops[i];
+      v = o[0] === 'x' ? rotX(v, o[1]) : o[0] === 'y' ? rotY(v, o[1]) : rotZ(v, o[1]);
+    }
+    return v;
+  }
+  function opsStr(ops) {
+    return ops.map(function (o) { return 'rotate' + o[0].toUpperCase() + '(' + o[1].toFixed(2) + 'deg)'; }).join(' ');
+  }
+  var LIGHT = (function () { var l = [-0.35, -0.8, 0.5], m = Math.sqrt(l[0] * l[0] + l[1] * l[1] + l[2] * l[2]); return [l[0] / m, l[1] / m, l[2] / m]; })();
+  function bright(n) { var d = n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]; return 0.6 + 0.5 * Math.max(0, d); }
   function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function shade(hex, k) {
     var c = rgb(hex);
     return 'rgb(' + c.map(function (v) { return Math.max(0, Math.min(255, Math.round(v * k))); }).join(',') + ')';
   }
 
-  // ---- bentuk: kotak-kotak (g = grup: body | pcb | lid) ----
-  function buildParts() {
-    var P = [];
-    function add(g, x, y, z, w, h, d, c, o) { P.push(Object.assign({ g: g, x: x, y: y, z: z, w: w, h: h, d: d, c: c }, o || {})); }
-    var C = colors;
-    add('body', 0, 37, 0, 240, 6, 150, C.caseC);
-    add('body', 0, 20, 72, 240, 40, 6, C.caseC);
-    add('body', 0, 20, -72, 240, 40, 6, C.caseC);
-    add('body', -117, 20, 0, 6, 40, 138, C.caseC);
-    add('body', 117, 20, 0, 6, 40, 138, C.caseC);
-    [[-85, -45], [85, -45], [-85, 45], [85, 45]].forEach(function (p) { add('body', p[0], 32, p[1], 6, 4, 6, '#C98A25'); });
-    add('pcb', 0, 28, 0, 200, 4, 110, '#2F7D4F');
-    add('pcb', -65, 24, -5, 50, 4, 60, '#A9AFB6', { label: 'ESP32', lc: '#1B2A21', ls: 11 });
-    add('pcb', 35, 24.5, 10, 20, 3, 20, '#14181C');
-    add('pcb', 10, 22, 48, 150, 8, 5, '#15181C');
-    add('pcb', 10, 22, -48, 150, 8, 5, '#15181C');
-    [70, 82, 94].forEach(function (x) { add('pcb', x, 22, -30, 6, 8, 6, '#E39A2D'); });
-    add('lid', 0, -7, 0, 240, 14, 150, C.lidC);
-    add('lid', -50, -15, 10, 90, 2, 54, '#0F2A1A');
-    add('lid', -50, -17, 10, 80, 2, 44, '#0B1F14', { label: '28.4°C', lc: '#F4ECD9', ls: 14 });
-    add('lid', 65, -16, 35, 16, 4, 16, C.sensorC);
-    add('lid', -100, -37, -55, 7, 46, 7, '#0F2A1A');
-    add('body', -70, 20, 76, 22, 9, 2, '#9AA1A9');
-    add('body', -70, 20, 77.2, 16, 4, 0.6, '#14181C');
-    add('body', 30, 20, 76, 6, 6, 2, C.sensorC);
-    add('body', 50, 20, 76, 6, 6, 2, '#F4ECD9');
-    add('body', 132, 18, 0, 24, 34, 36, C.sensorC);
-    [-10, 0, 10].forEach(function (z) { add('body', 144.6, 18, z, 1.2, 22, 4, '#164A2B'); });
-    return P;
-  }
+  // ---------- pembuat bentuk ----------
+  var FACES = [];
+  var NAMES = ['front', 'back', 'right', 'left', 'top', 'bottom'];
 
-  var scene = $('scene');
-  var faceEls = []; // { el, p, q }
-  var FACES = [
-    ['front', 1], ['back', 0.72], ['right', 0.88], ['left', 0.8], ['top', 1.12], ['bottom', 0.6]
-  ];
-
-  function faceGeom(p, name) {
-    var w = p.w, h = p.h, d = p.d;
-    switch (name) {
-      case 'front': return [w, h, 'translateZ(' + d / 2 + 'px)'];
-      case 'back': return [w, h, 'rotateY(180deg) translateZ(' + d / 2 + 'px)'];
-      case 'right': return [d, h, 'rotateY(90deg) translateZ(' + w / 2 + 'px)'];
-      case 'left': return [d, h, 'rotateY(-90deg) translateZ(' + w / 2 + 'px)'];
-      case 'top': return [w, d, 'rotateX(90deg) translateZ(' + h / 2 + 'px)'];
-      default: return [w, d, 'rotateX(-90deg) translateZ(' + h / 2 + 'px)'];
-    }
-  }
-
-  var parts = buildParts();
-  parts.forEach(function (p) {
-    FACES.forEach(function (q) {
-      var el = document.createElement('div');
-      if (p.label && q[0] === 'top') el.textContent = p.label;
-      scene.insertBefore(el, $('logo'));
-      faceEls.push({ el: el, p: p, q: q });
+  function addFace(g, pos, nodeOps, fops, dist, w, h, c, o, extra) {
+    extra = extra || {};
+    var n = applyOps(nodeOps.concat(fops), [0, 0, 1]);
+    FACES.push({
+      g: g, x: pos[0], y: pos[1], z: pos[2], nops: opsStr(nodeOps), fops: opsStr(fops), dist: dist,
+      w: w, h: h, c: c, k: bright(n), n: n,
+      alpha: o.alpha || 0, emit: !!o.emit, glass: !!o.glass,
+      clip: extra.clip || '', label: extra.label || '', html: extra.html || '',
+      two: !!extra.two, deco: !!extra.deco, lc: o.lc || '#1B2A21', ls: o.ls || 12, el: null
     });
-  });
-
-  function offsets() {
-    return { body: 0, pcb: state.explode ? -22 : 0, lid: state.explode ? -95 : 0 };
   }
+
+  function box(g, x, y, z, w, h, d, c, o) {
+    o = o || {};
+    var defs = [
+      [[], d / 2, w, h], [[['y', 180]], d / 2, w, h],
+      [[['y', 90]], w / 2, d, h], [[['y', -90]], w / 2, d, h],
+      [[['x', 90]], h / 2, w, d], [[['x', -90]], h / 2, w, d]
+    ];
+    defs.forEach(function (f, i) {
+      var ex = null;
+      if (o.label && (o.labelFace || 'top') === NAMES[i]) ex = { label: o.label };
+      addFace(g, [x, y, z], [], f[0], f[1], f[2], f[3], c, o, ex);
+    });
+  }
+
+  function quad(g, x, y, z, w, h, nodeOps, c, o, extra) {
+    addFace(g, [x, y, z], nodeOps, [], 0, w, h, c, o || {}, extra || {});
+  }
+
+  function rod(g, p1, p2, R, c, o) {
+    o = o || {};
+    var N = o.n || 8;
+    var dx = p2[0] - p1[0], dy = p2[1] - p1[1], dz = p2[2] - p1[2];
+    var L = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (L < 0.01) return;
+    var ny = dy / L;
+    var phi = Math.acos(Math.max(-1, Math.min(1, ny))) / D2R;
+    var sp = Math.sqrt(dx * dx + dz * dz) / L;
+    var th = sp > 1e-6 ? Math.atan2(dz / L, -dx / L) / D2R : 0;
+    var nodeOps = [['y', th], ['z', phi]];
+    var mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2];
+    var apo = R * Math.cos(Math.PI / N), sw = 2 * R * Math.sin(Math.PI / N) + 0.3;
+    var i, a;
+    for (i = 0; i < N; i++) {
+      a = i * 360 / N;
+      addFace(g, mid, nodeOps, [['y', a]], apo, sw, L, c, o);
+    }
+    if (o.nocap) return;
+    var ptsTop = [], ptsBot = [], b;
+    for (i = 0; i < N; i++) {
+      b = (i + 0.5) * 360 / N * D2R;
+      ptsTop.push((50 + 50 * Math.sin(b)).toFixed(2) + '% ' + (50 + 50 * Math.cos(b)).toFixed(2) + '%');
+      ptsBot.push((50 + 50 * Math.sin(b)).toFixed(2) + '% ' + (50 - 50 * Math.cos(b)).toFixed(2) + '%');
+    }
+    addFace(g, mid, nodeOps, [['x', 90]], L / 2, 2 * R, 2 * R, c, o, { clip: 'polygon(' + ptsTop.join(',') + ')' });
+    addFace(g, mid, nodeOps, [['x', -90]], L / 2, 2 * R, 2 * R, c, o, { clip: 'polygon(' + ptsBot.join(',') + ')' });
+  }
+
+  function lerp3(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function cable(g, pts, R, c, n) {
+    for (var i = 0; i < pts.length - 1; i++) rod(g, pts[i], pts[i + 1], R, c, { n: n || 6 });
+  }
+  function rnd(i) { var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
+
+  // ---------- logo buatan sendiri (ikon kotak hijau + oval krem + sinyal oranye) ----------
+  function iconInner() {
+    return '<rect x="347" y="258" width="268" height="224" rx="62" fill="' + GREEN + '"/>'
+      + '<ellipse cx="431" cy="339" rx="38" ry="28" transform="rotate(-30 431 339)" fill="' + CREAM + '"/>'
+      + '<ellipse cx="521" cy="323" rx="38" ry="28" transform="rotate(-25 521 323)" fill="' + CREAM + '"/>'
+      + '<ellipse cx="471" cy="413" rx="41" ry="25" transform="rotate(-5 471 413)" fill="' + CREAM + '"/>'
+      + '<ellipse cx="558" cy="407" rx="35" ry="26" transform="rotate(35 558 407)" fill="' + CREAM + '"/>'
+      + '<path d="M610 168 A90 90 0 0 1 700 258" fill="none" stroke="' + AMBER + '" stroke-width="22" stroke-linecap="round"/>'
+      + '<path d="M610 204 A54 54 0 0 1 664 258" fill="none" stroke="' + AMBER + '" stroke-width="22" stroke-linecap="round"/>'
+      + '<circle cx="614" cy="258" r="14" fill="' + AMBER + '"/>';
+  }
+  function iconSVG() {
+    return '<svg viewBox="340 152 378 336" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">' + iconInner() + '</svg>';
+  }
+  function logoSVG() {
+    return '<svg viewBox="0 0 640 170" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+      + '<svg x="0" y="0" width="190" height="169" viewBox="340 152 378 336">' + iconInner() + '</svg>'
+      + '<text x="212" y="112" font-family="Segoe UI,Arial,sans-serif" font-weight="700" font-size="76" textLength="418" lengthAdjust="spacingAndGlyphs">'
+      + '<tspan fill="' + GREEN + '">Fermento</tspan><tspan fill="' + AMBER + '">Sense</tspan></text></svg>';
+  }
+  function grilleSVG() {
+    var s = '<svg viewBox="0 0 28 34" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">', i, j;
+    for (j = 0; j < 6; j++) for (i = 0; i < 5; i++) s += '<rect x="' + (2.5 + i * 5) + '" y="' + (2.5 + j * 5.2) + '" width="3" height="3.4" rx="0.6" fill="#7A4E0E"/>';
+    return s + '</svg>';
+  }
+
+  // ---------- susun model ----------
+  function buildModel() {
+    // alas + atap
+    box('fix', 0, 98, 0, 320, 44, 200, FRAME);
+    box('fix', 230, 98, 0, 140, 44, 200, FRAME);
+    box('lid', 0, -117, 0, 316, 6, 196, LID);
+    box('fix', 230, -117, 0, 140, 6, 196, LID);
+
+    // tiang + rel
+    [-155, 155, 295].forEach(function (px) { [-95, 95].forEach(function (pz) { box('fix', px, -19, pz, 10, 190, 10, FRAME); }); });
+    [-95, 95].forEach(function (pz) { box('fix', 0, -110, pz, 300, 8, 10, FRAME); box('fix', 225, -110, pz, 130, 8, 10, FRAME); });
+    [-155, 155, 295].forEach(function (px) { box('fix', px, -110, 0, 10, 8, 180, FRAME); });
+
+    // sudut + kaki (hijau)
+    [-148, 148].forEach(function (cx) { [-88, 88].forEach(function (cz) {
+      box('fix', cx, -112, cz, 32, 24, 32, GREEN);
+      box('fix', cx, 103, cz, 32, 34, 32, GREEN);
+    }); });
+    [-88, 88].forEach(function (cz) { box('fix', 292, -112, cz, 32, 24, 32, GREEN); box('fix', 292, 103, cz, 32, 34, 32, GREEN); });
+    [-135, 135, 290].forEach(function (fx) { [-85, 85].forEach(function (fz) { box('fix', fx, 124, fz, 22, 8, 22, GREEN); }); });
+
+    // handle + kenop (ikut terangkat)
+    box('lid', -70, -134, 0, 12, 28, 14, GREEN);
+    box('lid', 70, -134, 0, 12, 28, 14, GREEN);
+    box('lid', 0, -152, 0, 152, 12, 16, GREEN);
+    rod('lid', [-105, -120, -30], [-105, -127, -30], 7, GREEN, { n: 10 });
+    rod('lid', [105, -120, -30], [105, -127, -30], 7, GREEN, { n: 10 });
+    // logo ikon di atap (ikut terangkat)
+    quad('lid', 0, -120.4, 56, 74, 66, [['x', 90]], '#000', {}, { html: iconSVG(), deco: true });
+
+    // dinding dalam
+    box('fix', 0, -19, -92.5, 300, 190, 3, WALL_B);
+    box('fix', 155, -19, 0, 4, 190, 180, WALL_R);
+    box('fix', 225, -19, -92.5, 130, 190, 3, WALL_C);
+    box('fix', 295, -19, 0, 4, 190, 180, WALL_S);
+
+    // kaca depan + kiri
+    quad('fix', 0, -15, 95, 300, 182, [], '#DCE8D8', { alpha: 0.12, glass: true }, { two: true });
+    quad('fix', -155, -15, 0, 180, 182, [['y', 90]], '#DCE8D8', { alpha: 0.12, glass: true }, { two: true });
+
+    // lampu atap (ikut terangkat)
+    box('lid', 55, -103.5, 5, 125, 5, 14, '#FFF1C9', { emit: true });
+
+    // DHT22 menggantung (oranye)
+    rod('lid', [-70, -106, 30], [-70, -90, 30], 4, GREEN, { n: 8 });
+    box('lid', -70, -70, 30, 34, 44, 18, AMBER);
+    box('lid', -70, -44, 30, 12, 6, 14, AMBER);
+    quad('lid', -70, -68, 39.2, 28, 34, [], AMBER, {}, { html: grilleSVG(), deco: true });
+
+    // rak + penyangga
+    box('fix', 0, -6, -20, 296, 3, 150, WALL_S);
+    [-40, 40].forEach(function (bz) { box('fix', -150, -2, bz, 6, 10, 14, '#9C8F6B'); box('fix', 150, -2, bz, 6, 10, 14, '#9C8F6B'); });
+
+    // tray tempe
+    function tray(cx, cz, fy, seed) {
+      box('fix', cx, fy - 4, cz, 130, 8, 80, '#E4EEE6', { alpha: 0.3 });
+      var ty = fy - 1.5 - 9.5;
+      box('fix', cx, ty, cz, 116, 19, 66, '#F0DC9A');
+      for (var k = 0; k < 14; k++) {
+        var dx = cx + (rnd(seed + k * 2) - 0.5) * 100, dz = cz + (rnd(seed + k * 2 + 1) - 0.5) * 50;
+        quad('fix', dx, ty - 9.65, dz, 7 + rnd(seed + k) * 5, 5 + rnd(seed + k + 9) * 3, [['x', 90]], '#C99A3E', {}, { deco: true });
+      }
+    }
+    tray(-80, -20, -7.5, 1);
+    tray(80, -20, -7.5, 40);
+    tray(-80, -20, 76, 80);
+    tray(50, -20, 76, 120);
+
+    // DS18B20
+    var dsB = [-8, 74, 62], dsT = [12, 0, 58];
+    rod('fix', dsB, lerp3(dsB, dsT, 0.88), 3.6, '#CFC7B2', { n: 10 });
+    rod('fix', lerp3(dsB, dsT, 0.88), dsT, 4.4, GREEN, { n: 10 });
+    cable('fix', [dsT, [15, -16, 59], [26, -32, 57], [48, -40, 52], [100, -42, 40], [155, -34, 35]], 1.8, INK, 6);
+
+    // gelas + sensor pH
+    rod('fix', [105, 76, 65], [105, 30, 65], 20, '#E4EEE6', { alpha: 0.24, n: 14 });
+    rod('fix', [105, 76, 65], [105, 48, 65], 17.5, '#A9D3C0', { alpha: 0.4, n: 14 });
+    var phT = [112, 0, 60], phB = [102, 62, 68];
+    rod('fix', phT, lerp3(phT, phB, 0.3), 6.5, GREEN, { n: 10 });
+    rod('fix', lerp3(phT, phB, 0.3), lerp3(phT, phB, 0.78), 4.6, AMBER, { n: 10 });
+    rod('fix', lerp3(phT, phB, 0.78), phB, 3.6, CREAM, { n: 10 });
+    cable('fix', [phT, [113, -14, 60], [120, -30, 58], [136, -38, 56], [155, -40, 55]], 2, INK, 6);
+
+    // kotak kontrol ESP32
+    box('fix', 232, -18, 68, 120, 146, 60, '#F0E6CC');
+    quad('fix', 232, -72, 98.4, 100, 26.5, [], '#000', {}, { html: logoSVG(), deco: true });
+    box('fix', 232, -24, 99.5, 66, 44, 3, AMBER);
+    box('fix', 232, -24, 101.5, 58, 36, 1, LCDG, {
+      label: 'T Udara : 32.0 °C\nT Media : 36.5 °C\nRH      : 85 %\npH      : 6.2', labelFace: 'front', lc: CREAM, ls: 5.2
+    });
+    [[202, AMBER], [244, CREAM]].forEach(function (b) {
+      rod('fix', [b[0], 15, 98], [b[0], 15, 100.5], 11.5, GREEN, { n: 14 });
+      rod('fix', [b[0], 15, 100.5], [b[0], 15, 106], 9, b[1], { n: 14 });
+    });
+    rod('fix', [224, 38, 98], [224, 38, 99.8], 10, GREEN, { n: 14 });
+    rod('fix', [224, 38, 99.8], [224, 38, 100.5], 6, '#2E6B45', { n: 12 });
+    [[180, -84], [284, -84], [180, 48], [284, 48]].forEach(function (s) { rod('fix', [s[0], s[1], 98], [s[0], s[1], 99.8], 2.2, '#A59A7E', { n: 8 }); });
+    // antena
+    rod('fix', [213, -91, 60], [213, -104, 60], 6.5, GREEN, { n: 10 });
+    rod('fix', [213, -104, 60], [213, -130, 60], 4.4, GREEN, { n: 8 });
+    rod('fix', [213, -130, 60], [213, -168, 60], 2.8, GREEN, { n: 8 });
+
+    // kabel dari kotak kontrol ke alas
+    [198, 226, 256].forEach(function (cx) {
+      cable('fix', [[cx, 55, 90], [cx, 66, 92], [cx + 4, 74, 97], [cx + 4, 86, 102]], 3.2, INK, 6);
+    });
+    [[AMBER, -2.6, 0], ['#B36E10', 0, 1.8], ['#2E6B45', 2.6, 0]].forEach(function (cc) {
+      var dx = cc[1], dz = cc[2];
+      cable('fix', [[186 + dx, 55, 88 + dz], [184 + dx, 66, 92 + dz], [176 + dx, 76, 97 + dz], [168 + dx, 90, 102 + dz]], 1.6, cc[0], 5);
+    });
+
+    // power supply
+    box('fix', 330, 116, 60, 62, 24, 40, GREEN);
+    cable('fix', [[299, 116, 58], [286, 122, 80], [270, 118, 104], [258, 92, 105]], 2.6, INK, 6);
+
+    // logo + tulisan di sisi depan alas
+    quad('fix', 0, 98, 100.4, 150, 40, [], '#000', {}, { html: logoSVG(), deco: true });
+  }
+  buildModel();
+
+  // ---------- buat elemen ----------
+  var scene = document.getElementById('scene');
+  FACES.forEach(function (f) {
+    var el = document.createElement('div');
+    if (f.html) el.innerHTML = f.html;
+    else if (f.label) el.textContent = f.label;
+    scene.appendChild(el);
+    f.el = el;
+  });
+  ['shadow', 'grid'].forEach(function (id) { var e = document.createElement('div'); e.id = id; scene.insertBefore(e, scene.firstChild); });
+  (function () {
+    var sh = document.getElementById('shadow'), gr = document.getElementById('grid');
+    sh.style.cssText = 'position:absolute;left:50%;top:50%;width:760px;height:380px;margin-left:-380px;margin-top:-190px;'
+      + 'background:radial-gradient(ellipse at center,rgba(22,42,28,.32) 0%,rgba(22,42,28,0) 68%);transform:translate3d(0,' + (128.8 + SY).toFixed(1) + 'px,0) rotateX(90deg);';
+    gr.style.cssText = 'position:absolute;left:50%;top:50%;width:1000px;height:600px;margin-left:-500px;margin-top:-300px;'
+      + 'background-image:linear-gradient(rgba(22,74,43,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(22,74,43,.14) 1px,transparent 1px);background-size:25px 25px;'
+      + '-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 70%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 70%);'
+      + 'transform:translate3d(0,' + (129.8 + SY).toFixed(1) + 'px,0) rotateX(90deg);';
+  })();
+  document.getElementById('headIcon').innerHTML = iconSVG();
+
+  function groupLift(g) { return g === 'lid' && state.explode ? -115 : 0; }
 
   function applyFaces() {
-    var off = offsets();
-    faceEls.forEach(function (f) {
-      var p = f.p, g = faceGeom(p, f.q[0]);
-      var X = p.x - 12, Y = p.y + 10 + off[p.g], Z = p.z;
-      var c = rgb(p.c);
-      var st = 'position:absolute;left:50%;top:50%;box-sizing:border-box;'
-        + 'width:' + g[0] + 'px;height:' + g[1] + 'px;margin-left:' + (-g[0] / 2) + 'px;margin-top:' + (-g[1] / 2) + 'px;'
-        + 'transform:translate3d(' + X + 'px,' + Y + 'px,' + Z + 'px) ' + g[2] + ';'
-        + 'transition:transform .55s cubic-bezier(.2,.7,.2,1);';
-      if (state.wire) {
-        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.07);border:0.6px solid ' + shade(p.c, 0.55) + ';backface-visibility:visible;';
+    FACES.forEach(function (f) {
+      var c = rgb(f.c);
+      var tf = 'translate3d(' + (f.x + SX) + 'px,' + (f.y + SY + groupLift(f.g)) + 'px,' + f.z + 'px) ' + f.nops + ' ' + f.fops + ' translateZ(' + f.dist + 'px)';
+      var st = 'position:absolute;left:50%;top:50%;box-sizing:border-box;width:' + f.w + 'px;height:' + f.h + 'px;'
+        + 'margin-left:' + (-f.w / 2) + 'px;margin-top:' + (-f.h / 2) + 'px;transform:' + tf + ';'
+        + 'transition:transform .6s cubic-bezier(.2,.7,.2,1);';
+      var hidden = (f.glass && !state.glass) || (f.deco && state.wire);
+      if (hidden) st += 'display:none;';
+      if (f.html) {
+        st += 'backface-visibility:hidden;';
+      } else if (state.wire) {
+        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.05);border:0.6px solid ' + shade(f.c, 0.55) + ';backface-visibility:visible;';
+      } else if (f.alpha) {
+        st += 'background:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + f.alpha + ');border:0.5px solid rgba(255,255,255,.6);backface-visibility:visible;';
+      } else if (f.emit) {
+        st += 'background:' + f.c + ';backface-visibility:hidden;' + (f.n[1] > 0.5 ? 'box-shadow:0 0 14px 6px rgba(255,214,120,.55);' : '');
       } else {
-        st += 'background:' + shade(p.c, f.q[1]) + ';box-shadow:inset 0 0 0 0.5px rgba(0,0,0,.22);backface-visibility:hidden;';
+        st += 'background:' + shade(f.c, f.k) + ';backface-visibility:' + (f.two ? 'visible' : 'hidden') + ';';
       }
-      if (p.label && f.q[0] === 'top') {
-        st += 'display:flex;align-items:center;justify-content:center;font:600 ' + p.ls + 'px ui-monospace,Menlo,Consolas,monospace;color:' + p.lc + ';';
-      }
+      if (f.clip) st += 'clip-path:' + f.clip + ';-webkit-clip-path:' + f.clip + ';';
+      if (f.label) st += 'display:flex;align-items:center;padding:0 3px;white-space:pre;text-align:left;font:500 ' + f.ls + 'px/' + (f.ls * 1.6).toFixed(1) + 'px ui-monospace,Menlo,Consolas,monospace;color:' + f.lc + ';';
       f.el.style.cssText = st;
     });
-    var lg = $('logo');
-    lg.style.cssText = 'position:absolute;left:50%;top:50%;width:78px;height:70px;margin-left:-39px;margin-top:-35px;'
-      + 'transform:translate3d(45px,' + (-4.5 + off.lid) + 'px,-25px) rotateX(90deg);'
-      + 'transition:transform .55s cubic-bezier(.2,.7,.2,1);backface-visibility:hidden;'
-      + (state.logo ? '' : 'display:none;');
   }
 
-  $('shadow').style.cssText = 'position:absolute;left:50%;top:50%;width:340px;height:240px;margin-left:-170px;margin-top:-120px;'
-    + 'background:radial-gradient(ellipse at center,rgba(20,24,28,.32) 0%,rgba(20,24,28,0) 68%);transform:translate3d(0,51px,0) rotateX(90deg);';
-  $('grid').style.cssText = 'position:absolute;left:50%;top:50%;width:560px;height:420px;margin-left:-280px;margin-top:-210px;'
-    + 'background-image:linear-gradient(rgba(22,74,43,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(22,74,43,.16) 1px,transparent 1px);background-size:20px 20px;'
-    + '-webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);'
-    + 'transform:translate3d(0,52px,0) rotateX(90deg);';
+  // ---------- label penunjuk ----------
+  var LABELS = [
+    { t: 'DHT22', s: '', a: [-70, -62, 40], off: [-150, -30] },
+    { t: 'DS18B20', s: '', a: [2, 38, 61], off: [-175, 50] },
+    { t: 'Sensor pH', s: 'DFRobot SEN0161', a: [108, 38, 66], off: [60, 100] },
+    { t: 'ESP32', s: '', a: [292, -25, 70], off: [105, -90] },
+    { t: 'Kabel Jumper', s: '', a: [180, 80, 100], off: [-10, 125] },
+    { t: 'Power Supply', s: '', a: [336, 110, 80], off: [20, 75] }
+  ];
+  var linesSvg = document.getElementById('lines'), pillBox = document.getElementById('pills');
+  var NS = 'http://www.w3.org/2000/svg';
+  LABELS.forEach(function (L) {
+    L.line = document.createElementNS(NS, 'line');
+    L.line.setAttribute('stroke', GREEN); L.line.setAttribute('stroke-width', '2.5'); L.line.setAttribute('stroke-linecap', 'round');
+    L.dot = document.createElementNS(NS, 'circle');
+    L.dot.setAttribute('r', '5'); L.dot.setAttribute('fill', AMBER); L.dot.setAttribute('stroke', GREEN); L.dot.setAttribute('stroke-width', '2');
+    linesSvg.appendChild(L.line); linesSvg.appendChild(L.dot);
+    L.pill = document.createElement('div');
+    L.pill.className = 'pill';
+    L.pill.innerHTML = L.t + (L.s ? '<small>' + L.s + '</small>' : '');
+    pillBox.appendChild(L.pill);
+  });
 
-  function angDiff(a, b) { return Math.abs((((a - b) % 360) + 540) % 360 - 180); }
+  // ---------- ukuran stage & proyeksi ----------
+  var stage = document.getElementById('stage');
+  var W = 1000, H = 700, fit = 1.4;
+  function measure() {
+    W = stage.clientWidth; H = stage.clientHeight;
+    fit = Math.min(W / 800, H / 460);
+  }
+  function scaleNow() { return fit * state.zoom; }
+  function project(p) {
+    var q = [p[0] + SX, p[1] + SY, p[2]];
+    q = rotX(rotY(q, state.ry), state.rx);
+    var s = scaleNow();
+    var f = PERSP / (PERSP - q[2] * s);
+    return [W / 2 + q[0] * s * f, H / 2 + q[1] * s * f];
+  }
 
   function applyScene() {
-    var moving = state.dragging || state.auto;
-    scene.style.transform = 'scale(' + (state.zoom * 1.9).toFixed(3) + ') rotateX(' + state.rx.toFixed(2) + 'deg) rotateY(' + state.ry.toFixed(2) + 'deg)';
-    scene.style.transition = moving ? 'none' : 'transform .6s cubic-bezier(.2,.7,.2,1)';
+    scene.style.transform = 'scale(' + scaleNow().toFixed(4) + ') rotateX(' + state.rx.toFixed(2) + 'deg) rotateY(' + state.ry.toFixed(2) + 'deg)';
     var ryN = ((((state.ry + 180) % 360) + 360) % 360) - 180;
-    $('readout').textContent = 'X ' + Math.round(state.rx) + '°  Y ' + Math.round(ryN) + '°  ·  240 × 150 × 54 mm';
+    document.getElementById('readout').textContent = 'X ' + Math.round(state.rx) + '°  Y ' + Math.round(ryN) + '°';
+    linesSvg.style.display = pillBox.style.display = state.labels ? '' : 'none';
+    if (!state.labels) return;
+    LABELS.forEach(function (L) {
+      var p = project(L.a), cx = p[0] + L.off[0], cy = p[1] + L.off[1];
+      L.line.setAttribute('x1', p[0]); L.line.setAttribute('y1', p[1]);
+      L.line.setAttribute('x2', cx); L.line.setAttribute('y2', cy);
+      L.dot.setAttribute('cx', p[0]); L.dot.setAttribute('cy', p[1]);
+      L.pill.style.transform = 'translate(' + (cx - L.pill.offsetWidth / 2).toFixed(1) + 'px,' + (cy - L.pill.offsetHeight / 2).toFixed(1) + 'px)';
+    });
   }
 
-  // ---- tombol ----
-  var presets = [['Depan', 0, 0], ['Atas', -90, 0], ['Samping', 0, -90], ['Isometrik', -24, -32]];
-  var viewBtns = [], modeBtns = [], toggleBtns = [];
+  // ---------- kontrol ----------
+  function $(id) { return document.getElementById(id); }
+  function angDiff(a, b) { return Math.abs((((a - b) % 360) + 540) % 360 - 180); }
+  var tw = 0;
+  function tweenTo(rx, ry) {
+    var s0 = { rx: state.rx, ry: state.ry }, t0 = performance.now(), dur = 600;
+    var target = ry + 360 * Math.round((state.ry - ry) / 360);
+    cancelAnimationFrame(tw);
+    function step(t) {
+      var u = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - u, 3);
+      state.rx = s0.rx + (rx - s0.rx) * e;
+      state.ry = s0.ry + (target - s0.ry) * e;
+      applyScene();
+      if (u < 1) tw = requestAnimationFrame(step); else refreshUI(false);
+    }
+    state.auto = false;
+    tw = requestAnimationFrame(step);
+  }
 
   function mkBtn(parent, label, onClick) {
     var b = document.createElement('button');
@@ -253,75 +483,56 @@
     parent.appendChild(b);
     return b;
   }
-
-  presets.forEach(function (v) {
-    viewBtns.push({ b: mkBtn($('views'), v[0], function () {
-      var target = v[2] + 360 * Math.round((state.ry - v[2]) / 360);
-      state.rx = v[1]; state.ry = target; state.auto = false;
-      refreshUI();
-    }), v: v });
+  var presets = [['Depan', 0, 0], ['Atas', -90, 0], ['Kiri', 0, 90], ['Kanan', 0, -90], ['Belakang', 0, 180], ['Isometrik', -14, 24]];
+  var viewBtns = presets.map(function (v) { return { b: mkBtn($('views'), v[0], function () { tweenTo(v[1], v[2]); refreshUI(false); }), v: v }; });
+  var toggles = [
+    ['Solid', $('modes'), function () { return !state.wire; }, function () { state.wire = false; }],
+    ['Kerangka', $('modes'), function () { return state.wire; }, function () { state.wire = true; }],
+    ['Bongkar tutup', $('toggles'), function () { return state.explode; }, function () { state.explode = !state.explode; }],
+    ['Putar otomatis', $('toggles'), function () { return state.auto; }, function () { state.auto = !state.auto; }],
+    ['Kaca', $('toggles'), function () { return state.glass; }, function () { state.glass = !state.glass; }],
+    ['Label', $('toggles'), function () { return state.labels; }, function () { state.labels = !state.labels; }]
+  ].map(function (t) {
+    return { on: t[2], b: mkBtn(t[1], t[0], function () { t[3](); refreshUI(true); }) };
   });
-  modeBtns.push({ b: mkBtn($('modes'), 'Solid', function () { state.wire = false; refreshUI(); }), on: function () { return !state.wire; } });
-  modeBtns.push({ b: mkBtn($('modes'), 'Kerangka', function () { state.wire = true; refreshUI(); }), on: function () { return state.wire; } });
-  toggleBtns.push({ b: mkBtn($('toggles'), 'Bongkar casing', function () { state.explode = !state.explode; refreshUI(); }), on: function () { return state.explode; } });
-  toggleBtns.push({ b: mkBtn($('toggles'), 'Putar otomatis', function () { state.auto = !state.auto; refreshUI(); }), on: function () { return state.auto; } });
-  toggleBtns.push({ b: mkBtn($('toggles'), 'Tampilkan logo', function () { state.logo = !state.logo; refreshUI(); }), on: function () { return state.logo; } });
 
-  function refreshUI() {
+  function refreshUI(faces) {
     viewBtns.forEach(function (x) {
       x.b.setAttribute('aria-pressed', String(Math.abs(state.rx - x.v[1]) < 1 && angDiff(state.ry, x.v[2]) < 1));
     });
-    modeBtns.concat(toggleBtns).forEach(function (x) { x.b.setAttribute('aria-pressed', String(x.on())); });
-    applyFaces();
+    toggles.forEach(function (t) { t.b.setAttribute('aria-pressed', String(t.on())); });
+    if (faces) applyFaces();
     applyScene();
   }
 
-  // ---- warna & zoom ----
-  function setColor(key, swId) {
-    return function (e) {
-      colors[key] = e.target.value;
-      $(swId).style.background = e.target.value;
-      recolor();
-    };
-  }
-  function recolor() {
-    var fresh = buildParts();
-    faceEls.forEach(function (f, i) { f.p.c = fresh[Math.floor(i / 6)].c; });
-    applyFaces();
-  }
-  $('cCase').addEventListener('input', setColor('caseC', 'swCase'));
-  $('cLid').addEventListener('input', setColor('lidC', 'swLid'));
-  $('cSensor').addEventListener('input', setColor('sensorC', 'swSensor'));
-  $('swCase').style.background = colors.caseC;
-  $('swLid').style.background = colors.lidC;
-  $('swSensor').style.background = colors.sensorC;
   $('zoom').addEventListener('input', function (e) { state.zoom = Number(e.target.value); applyScene(); });
 
-  // ---- seret untuk memutar ----
-  var stage = $('stage');
+  var drag = null;
   stage.addEventListener('pointerdown', function (e) {
-    if (e.target.closest && e.target.closest('input,button')) return;
+    cancelAnimationFrame(tw);
     drag = { x: e.clientX, y: e.clientY, rx: state.rx, ry: state.ry };
     try { stage.setPointerCapture(e.pointerId); } catch (err) {}
-    state.dragging = true; applyScene();
+    state.dragging = true;
   });
   stage.addEventListener('pointermove', function (e) {
     if (!drag) return;
     state.rx = Math.max(-90, Math.min(90, drag.rx - (e.clientY - drag.y) * 0.5));
     state.ry = drag.ry + (e.clientX - drag.x) * 0.5;
     applyScene();
-    // pratinjau tombol sudut pandang
     viewBtns.forEach(function (x) { x.b.setAttribute('aria-pressed', 'false'); });
   });
-  function endDrag() { drag = null; state.dragging = false; refreshUI(); }
+  function endDrag() { drag = null; state.dragging = false; refreshUI(false); }
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
 
-  setInterval(function () {
-    if (state.auto && !drag) { state.ry += 0.6; applyScene(); }
-  }, 33);
+  setInterval(function () { if (state.auto && !drag) { state.ry += 0.5; applyScene(); } }, 16);
 
-  refreshUI();
+  if (window.ResizeObserver) new ResizeObserver(function () { measure(); applyScene(); }).observe(stage);
+  window.addEventListener('resize', function () { measure(); applyScene(); });
+
+  measure();
+  applyFaces();
+  refreshUI(false);
 })();
 </script>
 </body>

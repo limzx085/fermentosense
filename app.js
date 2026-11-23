@@ -387,7 +387,7 @@ function renderSource() {
 }
 
 /* ---------- grafik (SVG buatan sendiri, tanpa library) ---------- */
-const COLORS = { temp:'#f28c1a', air:'#14a39a', hum:'#2f86e0', ph:'#8a4fc1' };
+const COLORS = { temp:'#E39A2D', air:'#164A2B', hum:'#7FA23A', ph:'#8B4A2B' };
 function niceStep(raw) {
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
   for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw - 1e-9) return m * p;
